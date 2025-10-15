@@ -1,0 +1,20 @@
+<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+ <defs>
+  <clipPath id="clip0_7101_6658">
+   <rect id="svg_1" fill="white" rx="20" height="40" width="40"/>
+  </clipPath>
+ </defs>
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="26" width="26" y="-1" x="-1"/>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <g id="svg_5">
+   <g id="svg_6">
+    <path fill="none" id="svg_3" stroke="#FD957A" d="m12,2.5c5.2467,0 9.5,4.2533 9.5,9.5c0,5.2467 -4.2533,9.5 -9.5,9.5c-5.2467,0 -9.5,-4.2533 -9.5,-9.5c0,-5.2467 4.2533,-9.5 9.5,-9.5z"/>
+    <path id="svg_4" fill="#FD957A" d="m6,12c0,-3.3137 2.6863,-6 6,-6c3.3137,0 6,2.6863 6,6c0,3.3137 -2.6863,6 -6,6c-3.3137,0 -6,-2.6863 -6,-6z"/>
+   </g>
+  </g>
+ </g>
+</svg>
