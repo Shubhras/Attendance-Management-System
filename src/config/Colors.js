@@ -20,6 +20,7 @@ const LightThemeColors = {
   borderlineActive: '#E4E4E4',
   borderlineInactive: '#EEEEEE',
   blurEffect: '#E9E9E9',
+  titleColor:'#1A2A7A'
 };
 
 // Defining dark theme colors
@@ -77,6 +78,8 @@ const Colors = {
   lightBlackIconBackground: '#3F3D3D',
   lightgary: '#969392',
   inactiveStar: '#CCCCCC', 
+  pomegranate:'#D61313'
+
 };
 
 // Exporting colors

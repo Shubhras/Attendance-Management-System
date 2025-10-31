@@ -5,6 +5,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppStyles from './AppStyles';
 import Routes from './src/navigators/Routes';
 import Splash from './src/screens/Splash';
+import FlashMessage from 'react-native-flash-message';
+import { Provider } from 'react-redux';
+import store, { persistor } from './src/redux/store/Store';
+import { PersistGate } from 'redux-persist/integration/react';
 
 // create a component
 const App = () => {
@@ -28,9 +32,15 @@ const App = () => {
 
   return (
     <GestureHandlerRootView style={AppStyles.gestureHandlerRootView}>
-      <NavigationContainer>
-        <Routes />
-      </NavigationContainer>
+      <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer>
+          <Routes />
+          <FlashMessage position="top" />
+        </NavigationContainer>
+        </PersistGate>
+      </Provider>
+
     </GestureHandlerRootView>
   );
 };
