@@ -17,6 +17,7 @@ export const LoginAPI = async (data) => {
             .request(config)
             .then(response => {
                 resolve(response.data);
+                console.log('responselogin',response)
             })
             .catch(error => {
                 if (error.response) {
@@ -123,6 +124,37 @@ export const getMachines = async (token, searchText, pageNumber) => {
             method: 'GET',
             url: `${API_URL}/api/get-machines?search=${searchText}&page=${pageNumber}`,
 
+            headers: {
+                'Content-Type': 'Application/json',
+                Authorization: `Bearer ${token}`
+            },
+        };
+        axios
+            .request(config)
+            .then(response => {
+                resolve(response.data);
+            })
+            .catch(error => {
+                if (error.response) {
+                    reject(error.response.data);
+                } else if (error.request) {
+                    reject(error);
+                } else {
+                    reject(error);
+                }
+            });
+    });
+};
+
+
+
+
+
+export const getContractorsApi = async (token, searchText, pageNumber) => {
+    return new Promise((resolve, reject) => {
+        const config = {
+            method: 'GET',
+            url: `${API_URL}/api/get-contractors-employee?search=${searchText}&page=${pageNumber}`,
             headers: {
                 'Content-Type': 'Application/json',
                 Authorization: `Bearer ${token}`

@@ -18,7 +18,7 @@ const ContractorCard = ({ onPress, name, contractorId, totalEmployee, image,onPr
       <View style={styles.textView}>
         <CustomText numberOfLines={1} style={[styles.title, { color: LightThemeColors.textHighContrast }]}>{name}</CustomText>
         <CustomText style={[styles.id, { color: LightThemeColors.textLowContrast }]}>Contractor Id : {contractorId}</CustomText>
-        <CustomText style={[styles.subtitle, { color: LightThemeColors.textLowContrast }]}>Total Employee :{totalEmployee}</CustomText>
+        <CustomText style={[styles.subtitle, { color: LightThemeColors.textLowContrast }]}>Total Employee : {totalEmployee}</CustomText>
       </View>
       <Pressable style={[styles.downloadButton,{backgroundColor:Colors.grey}]} onPress={onPressDownload}>
         <Icons name={'download-outline'} iconType={'Ionicons'} size={scale(20)} color={Colors.black}/>

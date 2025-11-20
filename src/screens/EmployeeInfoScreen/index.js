@@ -17,7 +17,22 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
   const [employee, setEmployee] = useState({});
   const user = useSelector(state => state.users.users);
   const token = user?.access_token;
-console.log('user222222222',item)
+
+  const formatShiftTiming = (shiftObj) => {
+    if (!shiftObj) return '';
+
+    const formatTime = (time) => {
+      const [hour, minute] = time.split(':');
+      return `${hour}:${minute}`; // remove seconds
+    };
+
+    const start = formatTime(shiftObj.clock_in_time);
+    const end = formatTime(shiftObj.clock_out_time);
+
+    return `${shiftObj.shift_name} • ${start} - ${end}`;
+  };
+
+  console.log('user222222222', item)
   useEffect(() => {
     getEmployee();
   }, []);
@@ -64,7 +79,7 @@ console.log('user222222222',item)
           title={'Employee Info'}
           headerBg={LightThemeColors.titleColor}
           iconColor={Colors.white}
-          style={{ height: scale(50)}}
+          style={{ height: scale(50) }}
         />
 
         {/* Loader */}
@@ -79,12 +94,12 @@ console.log('user222222222',item)
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.profileWrapper}>
               <View style={styles.imageWrapper}>
-                <Image 
+                <Image
                   source={
-                    employee?.photo 
+                    employee?.photo
                       ? { uri: employee?.photo }
                       : require('../../assets/images/placeholder/Pro.jpeg')
-                  } 
+                  }
                   style={styles.image}
                 />
               </View>
@@ -102,9 +117,12 @@ console.log('user222222222',item)
             <View style={styles.row}>
               <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Salary :</CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                  {employee?.salary_monthly} ₹
-                </CustomText>
+                {employee?.salary_type == 'daily' ? <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                {employee?.salary_daily} ₹ /{employee?.salary_type} 
+                </CustomText> :
+                  <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                    {employee?.salary_monthly} ₹ /{employee?.salary_type} 
+                  </CustomText>}
               </View>
             </View>
 
@@ -121,7 +139,7 @@ console.log('user222222222',item)
               <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Work :</CustomText>
               <View style={styles.valueWrapper}>
                 <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                  {employee?.work}
+                  {employee?.employee_work_title}
                 </CustomText>
               </View>
             </View>
@@ -130,7 +148,7 @@ console.log('user222222222',item)
               <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Shift time :</CustomText>
               <View style={styles.valueWrapper}>
                 <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                  {employee?.shiftIn_time} - {employee?.shiftOut_time}
+                  {formatShiftTiming(employee?.shift)}
                 </CustomText>
               </View>
             </View>
@@ -139,7 +157,7 @@ console.log('user222222222',item)
               <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Joining Date :</CustomText>
               <View style={styles.valueWrapper}>
                 <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                  {formatDate(employee?.joiningDate)}
+                  {formatDate(employee?.joining_date)}
                 </CustomText>
               </View>
             </View>
