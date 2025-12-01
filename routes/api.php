@@ -4,11 +4,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OperatorAuthController;
 use App\Http\Controllers\Api\OperatorAttendanceController;
+use App\Http\Controllers\Api\AdminAuthController;
+
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
 // Route::post('operator/login', [OperatorAuthController::class, 'login']);
 Route::post('operator/login', [OperatorAuthController::class, 'login'])->name('login');
+// Route::post('login', [OperatorAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/employees', [OperatorAuthController::class, 'getEmployees']);
     Route::get('/employees/{uuid}', [OperatorAuthController::class, 'getEmployeeDetails']);
@@ -29,5 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/operator/attendance/list', [OperatorAttendanceController::class, 'attendanceList']);
     //Route::get('/operator/attendance/pdf/all', [OperatorAttendanceController::class, 'exportAll']);
     Route::get('/operator/attendance/pdf/{employee_id}', [OperatorAttendanceController::class, 'exportEmployee']);
-
 });
+// Admin Login Routes
+    Route::post('/admin/login', [AdminAuthController::class, 'login']);
+    Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('operator/logout', [OperatorAuthController::class, 'logout'])->middleware('auth:sanctum');

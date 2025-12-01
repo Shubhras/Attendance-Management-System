@@ -13,30 +13,95 @@ use Illuminate\Validation\ValidationException;
 
 class OperatorAuthController extends Controller
 {
-    public function login(Request $request)
-    {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    // public function login(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'email' => 'required|email',
+    //         'password' => 'required',
+    //     ]);
 
-        $user = User::where('email', $validated['email'])->first();
+    //     $user = User::where('email', $validated['email'])->first();
 
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
+    //     if (! $user || ! Hash::check($validated['password'], $user->password)) {
+    //         return response()->json(['message' => 'Invalid credentials'], 401);
+    //     }
 
-        $token = $user->createToken('operator-token')->plainTextToken;
-        // 3️⃣ Match employee by employee_code
-        $employee = Employee::where('employee_code', $user->employee_code)->first();
+    //     $token = $user->createToken('operator-token')->plainTextToken;
+    //     // 3️⃣ Match employee by employee_code
+    //     $employee = Employee::where('employee_code', $user->employee_code)->first();
+    //     return response()->json([
+    //         'status' => 200,
+    //         'token' => $token,
+    //         'user' => $user,
+    //         'employee' => $employee,
+    //     ], 200); 
+    // }
+public function login(Request $request)
+{
+    $validated = $request->validate([
+        'email'       => 'required|email',
+        'password'    => 'required',
+        'device_name' => 'required'   // recommended for Sanctum
+    ]);
+
+    $user = User::where('email', $validated['email'])->first();
+
+    if (! $user || ! Hash::check($validated['password'], $user->password)) {
         return response()->json([
-            'status' => 200,
-            'token' => $token,
-            'user' => $user,
-            'employee' => $employee,
-        ], 200); 
+            'status'  => false,
+            'message' => 'Invalid credentials'
+        ], 401);
     }
 
+    // Create token based on role
+    if ($user->role === 'admin') {
+
+        $token = $user->createToken('admin-token')->plainTextToken;
+
+        return response()->json([
+            'status'  => true,
+            'role'    => 'admin',
+            'message' => 'Admin login successful',
+            'token'   => $token,
+            'user'    => $user
+        ], 200);
+    }
+
+    if ($user->role === 'operator') {
+
+        $token = $user->createToken('operator-token')->plainTextToken;
+
+        $employee = Employee::where('employee_code', $user->employee_code)->first();
+
+        return response()->json([
+            'status'   => true,
+            'role'     => 'operator',
+            'message'  => 'Operator login successful',
+            'token'    => $token,
+            'user'     => $user,
+            'employee' => $employee
+        ], 200);
+    }
+
+    // If some unknown role
+    return response()->json([
+        'status'  => false,
+        'message' => 'Role not allowed'
+    ], 403);
+}
+public function logout(Request $request)
+{
+    $token = $request->user()->currentAccessToken();
+
+    if ($token) {
+        $token->delete();
+    }
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Logout successful'
+    ]);
+}
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
