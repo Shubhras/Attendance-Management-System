@@ -62,6 +62,16 @@ const data = [
     onPress: 'ContractorListScreen',
 
   },
+  {
+    id: 6,
+    title: 'Register Employee',
+    subtitle: 'Total Contractors',
+    subtitleValue: 20,
+    icon: require('../../assets/images/add.png'),
+    param: " ",
+    onPress: 'RegisterEmployeeScreen',
+
+  },
 ];
 
 const HomeScreen = ({ navigation }) => {
@@ -86,7 +96,6 @@ const HomeScreen = ({ navigation }) => {
           name={user?.name}
           employeeId={user?.id}
           imageOnPress={() => { navigation.navigate('ProfileScreen') }}
-
         />
         <View style={styles.titleView}>
           <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Quick Access</CustomText>

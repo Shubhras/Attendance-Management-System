@@ -16,6 +16,8 @@ import EmployeeInfoScreen from '../../screens/EmployeeInfoScreen/index.js';
 import AttendanceScreen from '../../screens/AttendanceScreen/index.js';
 import MachineEmployeeScreen from '../../screens/MachineEmployeeScreen/index.js'
 import LogInScreen from '../../screens/LogInScreen/index.js';
+import RegisterEmployeeScreen from '../../screens/RegisterEmployeeScreen/index.js';
+
 import { useSelector } from 'react-redux';
 const Stack = createNativeStackNavigator();
 
@@ -102,6 +104,11 @@ const Routes = () => {
        <Stack.Screen
         name="MachineEmployeeScreen"
         component={MachineEmployeeScreen}
+        options={{ headerShown: false }}
+      />
+       <Stack.Screen
+        name="RegisterEmployeeScreen"
+        component={RegisterEmployeeScreen}
         options={{ headerShown: false }}
       />
 

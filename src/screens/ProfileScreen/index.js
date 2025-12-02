@@ -19,6 +19,7 @@ const ProfileScreen = ({ navigation }) => {
 
     const user = useSelector(state => state.users.users?.user);
 
+    console.log('useriiiiiiiiiii',user)
     const handleLogout = () => {
         Alert.alert(
             'Logout',
