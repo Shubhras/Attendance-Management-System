@@ -111,12 +111,25 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation files('libs/mfs100.jar')
+    implementation fileTree(dir: "libs", include: ["*.aar"])
+    implementation files("libs/MorfinAuth.aar")
+    // implementation files('libs/mfs100.jar')
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
     }
+}
+
+android {
+    packagingOptions {
+        pickFirst '**/*.so'
+    }
+//   sourceSets {
+//     main {
+//       jniLibs.srcDirs = ['src/main/jniLibs']
+//     }
+//   }
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

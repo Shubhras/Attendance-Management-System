@@ -146,3 +146,33 @@ export const getMachines = async (token, searchText, pageNumber) => {
 };
 
 
+export const fingerPrintAdd = async (data) => {
+    return new Promise((resolve, reject) => {
+        const config = {
+            method: 'POST',
+            url: `${API_URL}/api/thumb-machine/store`,
+
+            headers: {
+                'Content-Type': 'Application/json',
+                // Authorization: `Bearer ${token}`
+            },
+            data:data
+        };
+        axios
+            .request(config)
+            .then(response => {
+                resolve(response.data);
+            })
+            .catch(error => {
+                if (error.response) {
+                    reject(error.response.data);
+                } else if (error.request) {
+                    reject(error);
+                } else {
+                    reject(error);
+                }
+            });
+    });
+};
+
+

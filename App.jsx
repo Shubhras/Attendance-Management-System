@@ -48,7 +48,7 @@ const App = () => {
 export default App;
 
 // //import liraries
-// import React, { useState } from 'react';
+// import React, { useEffect, useState } from 'react';
 // import {
 //   Button,
 //   View,
@@ -67,6 +67,11 @@ export default App;
 //   AVAILABLE_PACKAGES,
 //   DEFAULT_PID_OPTIONS,
 // } from 'react-native-rdservice-fingerprintscanner';
+// import { fingerPrintAdd } from './src/api/auth'
+// import Morfin from './MorfinAuth';
+
+// import FingerprintScreen from './FingerprintScreen';
+// import FingerprintScreenMantra from './FingerprintScreenMantra';
 
 // const App = () => {
 //   const [txt, setTxt] = useState('');
@@ -75,6 +80,27 @@ export default App;
 //   const [secondCapture, setSecondCapture] = useState(null);
 //   const [resultsVerify, setResultsVerify] = useState('');
 
+//   const test = async () => {
+//     const connected = await Morfin.isDeviceConnected();
+//     console.log("Connected:", connected);
+  
+//     const info = await Morfin.initDevice();
+//     console.log("Device Info:", info);
+  
+//     const result = await Morfin.autoCapture(60, 10000);
+//     console.log("Captured:", result);
+  
+//     const template = await Morfin.getTemplate();
+//     console.log("Template length:", template.length);
+  
+//     const imgBase64 = await Morfin.getImage();
+//     console.log("Image Base64:", imgBase64);
+//   };
+//   // useEffect(()=>{
+
+//   //   test();
+//   // },[])
+  
 //   // const copyJSON = jsonData => {
 //   //   Clipboard.setString(JSON.stringify(jsonData, null, 2));
 //   //   ToastAndroid.show('Copied to Clipboard!', ToastAndroid.SHORT);
@@ -97,6 +123,23 @@ export default App;
 //   // 👉 2. Capture Finger
 //   const handleCaptureFinger = () => {
 //     captureFinger(DEFAULT_PID_OPTIONS)
+//       .then(res => {
+//         console.log(res, 'FINGER CAPTURE');
+//         setFirstCapture(res);
+//         setTxt(JSON.stringify(res));
+//         handleAPI(res)
+//       })
+//       .catch(err => {
+//         console.log(err, 'ERROR_FINGER_CAPTURE');
+//         setTxt(JSON.stringify(err));
+//       });
+//   };
+
+//   const handleAPI = (fingData) => {
+//     const payload ={
+//       thumb_template_data:fingData
+//     }
+//     fingerPrintAdd(payload)
 //       .then(res => {
 //         console.log(res, 'FINGER CAPTURE');
 //         setFirstCapture(res);
@@ -167,8 +210,11 @@ export default App;
 //   };
 
 //   return (
-//     <ScrollView>
-//       <View style={styles.container}>
+//     <ScrollView style={{backgroundColor:'#fff', paddingTop:10}}>
+//       {/* <FingerprintScreen /> */}
+
+//       <FingerprintScreenMantra />
+//       {/* <View style={styles.container}>
 //         <Button title="Get Machine Info" onPress={getMachine} />
 
 //         <Button title="Capture Finger" onPress={handleCaptureFinger} />
@@ -179,15 +225,15 @@ export default App;
 
 //         <Button title="Check Driver" onPress={checkDriver} />
 
-//         <Button title="Open Fingerprint Scanner" onPress={openScanner} />
+//         <Button title="Open Fingerprint Scanner" onPress={openScanner} /> */}
 //         {/* <Button title="COpy first" onPress={()=>{copyJSON(txt)}} />
 //         <Button title="COpy second" onPress={()=>{copyJSON(verifytxt)}} /> */}
 
-//         <Button title="Verify" onPress={verifyFingerprints} />
+//         {/* <Button title="Verify" onPress={verifyFingerprints} />
 
 //         <Text>{resultsVerify}</Text>
 //         <Text>{txt}</Text>
-//       </View>
+//       </View> */}
 //     </ScrollView>
 //   );
 // };
