@@ -197,10 +197,11 @@ $subTitle = 'Manage Employees';
                             <label class="form-label">Photo</label>
                             <input type="file" name="photo" class="form-control" accept="image/*">
                         </div>
-                        <div class="col-md-6">
+                        <input type="hidden" name="fingerprint" value="false">
+                        <!-- <div class="col-md-6">
                             <label class="form-label">Fingerprint</label>
                             <input type="file" name="fingerprint" class="form-control">
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <label class="form-label">Employee Type</label>
                             <select name="employee_type" class="form-select" required>

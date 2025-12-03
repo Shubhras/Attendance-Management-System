@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData};
+use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData,Shift};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -13,95 +13,95 @@ use Illuminate\Validation\ValidationException;
 
 class OperatorAuthController extends Controller
 {
-    // public function login(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'email' => 'required|email',
-    //         'password' => 'required',
-    //     ]);
+    public function login(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    //     $user = User::where('email', $validated['email'])->first();
+        $user = User::where('email', $validated['email'])->first();
 
-    //     if (! $user || ! Hash::check($validated['password'], $user->password)) {
-    //         return response()->json(['message' => 'Invalid credentials'], 401);
-    //     }
-
-    //     $token = $user->createToken('operator-token')->plainTextToken;
-    //     // 3️⃣ Match employee by employee_code
-    //     $employee = Employee::where('employee_code', $user->employee_code)->first();
-    //     return response()->json([
-    //         'status' => 200,
-    //         'token' => $token,
-    //         'user' => $user,
-    //         'employee' => $employee,
-    //     ], 200); 
-    // }
-public function login(Request $request)
-{
-    $validated = $request->validate([
-        'email'       => 'required|email',
-        'password'    => 'required',
-        'device_name' => 'required'   // recommended for Sanctum
-    ]);
-
-    $user = User::where('email', $validated['email'])->first();
-
-    if (! $user || ! Hash::check($validated['password'], $user->password)) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
-
-    // Create token based on role
-    if ($user->role === 'admin') {
-
-        $token = $user->createToken('admin-token')->plainTextToken;
-
-        return response()->json([
-            'status'  => true,
-            'role'    => 'admin',
-            'message' => 'Admin login successful',
-            'token'   => $token,
-            'user'    => $user
-        ], 200);
-    }
-
-    if ($user->role === 'operator') {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
 
         $token = $user->createToken('operator-token')->plainTextToken;
-
+        // 3️⃣ Match employee by employee_code
         $employee = Employee::where('employee_code', $user->employee_code)->first();
-
         return response()->json([
-            'status'   => true,
-            'role'     => 'operator',
-            'message'  => 'Operator login successful',
-            'token'    => $token,
-            'user'     => $user,
-            'employee' => $employee
-        ], 200);
+            'status' => 200,
+            'token' => $token,
+            'user' => $user,
+            'employee' => $employee,
+        ], 200); 
     }
+// public function login(Request $request)
+// {
+//     $validated = $request->validate([
+//         'email'       => 'required|email',
+//         'password'    => 'required',
+//         'device_name' => 'required'   // recommended for Sanctum
+//     ]);
 
-    // If some unknown role
-    return response()->json([
-        'status'  => false,
-        'message' => 'Role not allowed'
-    ], 403);
-}
-public function logout(Request $request)
-{
-    $token = $request->user()->currentAccessToken();
+//     $user = User::where('email', $validated['email'])->first();
 
-    if ($token) {
-        $token->delete();
-    }
+//     if (! $user || ! Hash::check($validated['password'], $user->password)) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Invalid credentials'
+//         ], 401);
+//     }
 
-    return response()->json([
-        'status'  => true,
-        'message' => 'Logout successful'
-    ]);
-}
+//     // Create token based on role
+//     if ($user->role === 'admin') {
+
+//         $token = $user->createToken('admin-token')->plainTextToken;
+
+//         return response()->json([
+//             'status'  => true,
+//             'role'    => 'admin',
+//             'message' => 'Admin login successful',
+//             'token'   => $token,
+//             'user'    => $user
+//         ], 200);
+//     }
+
+//     if ($user->role === 'operator') {
+
+//         $token = $user->createToken('operator-token')->plainTextToken;
+
+//         $employee = Employee::where('employee_code', $user->employee_code)->first();
+
+//         return response()->json([
+//             'status'   => true,
+//             'role'     => 'operator',
+//             'message'  => 'Operator login successful',
+//             'token'    => $token,
+//             'user'     => $user,
+//             'employee' => $employee
+//         ], 200);
+//     }
+
+//     // If some unknown role
+//     return response()->json([
+//         'status'  => false,
+//         'message' => 'Role not allowed'
+//     ], 403);
+// }
+// public function logout(Request $request)
+// {
+//     $token = $request->user()->currentAccessToken();
+
+//     if ($token) {
+//         $token->delete();
+//     }
+
+//     return response()->json([
+//         'status'  => true,
+//         'message' => 'Logout successful'
+//     ]);
+// }
     public function forgotPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
@@ -191,15 +191,92 @@ public function logout(Request $request)
 //         ],
 //     ]);
 // }
+
+
+// public function getEmployees(Request $request)
+// {
+//     $perPage = (int) $request->get('per_page', 10);
+//     $search = $request->get('search');
+
+//     $query = Employee::with([
+//         'user:id,name,email',
+//         'shift' // ✅ load shift relation
+//     ]);
+
+//     // Optional search filter
+//     if (!empty($search)) {
+//         $query->where(function ($q) use ($search) {
+//             $q->where('name', 'like', "%{$search}%")
+//               ->orWhere('mobile', 'like', "%{$search}%")
+//               ->orWhereHas('user', function ($u) use ($search) {
+//                   $u->where('email', 'like', "%{$search}%");
+//               });
+//         });
+//     }
+
+//     // Paginate results
+//     $employees = $query->orderBy('id', 'asc')->paginate($perPage);
+
+//     // ✅ Use domain from .env (APP_URL)
+//     $domain = rtrim(config('app.url'), '/');
+
+//     // Map and format employees
+//     $employeesData = $employees->map(function ($employee) use ($domain) {
+//         $data = $employee->toArray(); // includes all columns
+
+//         // Convert image paths to full URLs
+//         $data['photo'] = $employee->photo ? "{$domain}/{$employee->photo}" : null;
+//         // $data['fingerprint'] = $employee->fingerprint ? "{$domain}/{$employee->fingerprint}" : null;
+//         $data['aadhar_card'] = $employee->aadhar_card ? "{$domain}/{$employee->aadhar_card}" : null;
+
+//         // Include related user info
+//         $data['user'] = $employee->user;
+//         // ✅ Return shift details instead of ID
+//         $data['shift'] = $employee->shift ? [
+//             'shift_name'     => $employee->shift->shift_name,
+//             'clock_in_time'  => $employee->shift->clock_in_time,
+//             'clock_out_time' => $employee->shift->clock_out_time,
+//         ] : null;
+//         unset($data['shift_id']);
+//         return $data;
+//     });
+
+//     // JSON response
+//     return response()->json([
+//         'status' => true,
+//         'message' => 'Employee list fetched successfully',
+//         'data' => $employeesData,
+//         'pagination' => [
+//             'total' => $employees->total(),
+//             'per_page' => $employees->perPage(),
+//             'current_page' => $employees->currentPage(),
+//             'last_page' => $employees->lastPage(),
+//             'next_page_url' => $employees->nextPageUrl(),
+//             'prev_page_url' => $employees->previousPageUrl(),
+//         ],
+//     ]);
+// }
 public function getEmployees(Request $request)
 {
     $perPage = (int) $request->get('per_page', 10);
     $search = $request->get('search');
+    $fingerprintStatus = $request->get('fingerprint_status'); // 'true' or 'false'
 
-    $query = Employee::with([
-        'user:id,name,email',
-        'shift' // ✅ load shift relation
-    ]);
+    $query = Employee::with(['user:id,name,email','shift']);
+
+    // Filter by fingerprint status if provided
+    if ($fingerprintStatus !== null) {
+        if ($fingerprintStatus === 'true' || $fingerprintStatus === '1') {
+            $query->where('fingerprint', '=', '1');
+        } elseif ($fingerprintStatus === 'false' || $fingerprintStatus === '0') {
+            $query->where(function($q) {
+                $q->where('fingerprint', '=', '0')
+                ->orWhere('fingerprint', '=', 'false')
+                ->orWhereNull('fingerprint');
+            });
+        }
+    }
+
 
     // Optional search filter
     if (!empty($search)) {
@@ -215,31 +292,31 @@ public function getEmployees(Request $request)
     // Paginate results
     $employees = $query->orderBy('id', 'asc')->paginate($perPage);
 
-    // ✅ Use domain from .env (APP_URL)
+    if ($employees->isEmpty()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Employee not found',
+            'data' => [],
+        ]);
+    }
+
     $domain = rtrim(config('app.url'), '/');
 
-    // Map and format employees
+    // Map employees
     $employeesData = $employees->map(function ($employee) use ($domain) {
-        $data = $employee->toArray(); // includes all columns
-
-        // Convert image paths to full URLs
+        $data = $employee->toArray();
         $data['photo'] = $employee->photo ? "{$domain}/{$employee->photo}" : null;
-        $data['fingerprint'] = $employee->fingerprint ? "{$domain}/{$employee->fingerprint}" : null;
         $data['aadhar_card'] = $employee->aadhar_card ? "{$domain}/{$employee->aadhar_card}" : null;
-
-        // Include related user info
         $data['user'] = $employee->user;
-        // ✅ Return shift details instead of ID
         $data['shift'] = $employee->shift ? [
-            'shift_name'     => $employee->shift->shift_name,
-            'clock_in_time'  => $employee->shift->clock_in_time,
+            'shift_name' => $employee->shift->shift_name,
+            'clock_in_time' => $employee->shift->clock_in_time,
             'clock_out_time' => $employee->shift->clock_out_time,
         ] : null;
         unset($data['shift_id']);
         return $data;
     });
 
-    // JSON response
     return response()->json([
         'status' => true,
         'message' => 'Employee list fetched successfully',
@@ -254,6 +331,7 @@ public function getEmployees(Request $request)
         ],
     ]);
 }
+
 
 // public function getEmployeeDetails($uuid)
 // {
@@ -671,5 +749,166 @@ public function storeThumb(Request $request)
         'id'      => $record->id,
     ], 201);
 }
+public function getShifts()
+{
+    try {
+        $shifts = Shift::select('id', 'shift_name', 'clock_in_time', 'clock_out_time','created_by')
+            ->whereNull('deleted_at')
+            ->orderBy('id', 'ASC')
+            ->get();
 
+        return response()->json([
+            'status' => 200,
+            'message' => 'Shift list fetched successfully',
+            'shifts' => $shifts
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Something went wrong',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+public function storeFingerprint(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'employee_id'   => 'required|integer|exists:employees,id',
+            'template_data' => 'required|array',
+        ]);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'errors' => $e->errors()
+        ], 422);
+    }
+
+    $employee = Employee::findOrFail($validated['employee_id']);
+
+    $employee->update([
+        'fingerprint' => true,
+        'fingerprint_template_data' => $validated['template_data'],
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Fingerprint saved successfully',
+    ]);
+}
+
+public function nofingerprintData(Request $request)
+{
+    $perPage = (int) $request->get('per_page', 10);
+    $search = $request->get('search');
+
+    $query = Employee::with(['user:id,name,email','shift'])
+        ->where('fingerprint', false); // <- match string 'false'
+    if (!empty($search)) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('mobile', 'like', "%{$search}%")
+              ->orWhereHas('user', function ($u) use ($search) {
+                  $u->where('email', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    $employees = $query->orderBy('id', 'asc')->paginate($perPage);
+
+    if ($employees->isEmpty()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Employee not found'
+        ]);
+    }
+
+    $domain = rtrim(config('app.url'), '/');
+
+    $employeesData = $employees->map(function ($employee) use ($domain) {
+        $data = $employee->toArray();
+        $data['photo'] = $employee->photo ? "{$domain}/{$employee->photo}" : null;
+        $data['aadhar_card'] = $employee->aadhar_card ? "{$domain}/{$employee->aadhar_card}" : null;
+        $data['user'] = $employee->user;
+        $data['shift'] = $employee->shift ? [
+            'shift_name' => $employee->shift->shift_name,
+            'clock_in_time' => $employee->shift->clock_in_time,
+            'clock_out_time' => $employee->shift->clock_out_time,
+        ] : null;
+        unset($data['shift_id']);
+        return $data;
+    });
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Employees without fingerprint fetched successfully',
+        'data' => $employeesData,
+        'pagination' => [
+            'total' => $employees->total(),
+            'per_page' => $employees->perPage(),
+            'current_page' => $employees->currentPage(),
+            'last_page' => $employees->lastPage(),
+            'next_page_url' => $employees->nextPageUrl(),
+            'prev_page_url' => $employees->previousPageUrl(),
+        ],
+    ]);
+}
+public function withfingerprintData(Request $request)
+{
+    // echo"helllo";die;
+    $perPage = (int) $request->get('per_page', 10);
+    $search = $request->get('search');
+
+    $query = Employee::with(['user:id,name,email','shift'])
+        ->where('fingerprint', true); // <- match string 'false'
+    if (!empty($search)) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('mobile', 'like', "%{$search}%")
+              ->orWhereHas('user', function ($u) use ($search) {
+                  $u->where('email', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    $employees = $query->orderBy('id', 'asc')->paginate($perPage);
+
+    if ($employees->isEmpty()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Employee not found'
+        ]);
+    }
+
+    $domain = rtrim(config('app.url'), '/');
+
+    $employeesData = $employees->map(function ($employee) use ($domain) {
+        $data = $employee->toArray();
+        $data['photo'] = $employee->photo ? "{$domain}/{$employee->photo}" : null;
+        $data['aadhar_card'] = $employee->aadhar_card ? "{$domain}/{$employee->aadhar_card}" : null;
+        $data['user'] = $employee->user;
+        $data['shift'] = $employee->shift ? [
+            'shift_name' => $employee->shift->shift_name,
+            'clock_in_time' => $employee->shift->clock_in_time,
+            'clock_out_time' => $employee->shift->clock_out_time,
+        ] : null;
+        unset($data['shift_id']);
+        return $data;
+    });
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Employees without fingerprint fetched successfully',
+        'data' => $employeesData,
+        'pagination' => [
+            'total' => $employees->total(),
+            'per_page' => $employees->perPage(),
+            'current_page' => $employees->currentPage(),
+            'last_page' => $employees->lastPage(),
+            'next_page_url' => $employees->nextPageUrl(),
+            'prev_page_url' => $employees->previousPageUrl(),
+        ],
+    ]);
+}
 }

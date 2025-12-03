@@ -104,7 +104,7 @@ use Carbon\Carbon;
             'dob'               => 'nullable|date',
             'gender'            => ['nullable', Rule::in(['male', 'female', 'other'])],
             'photo'             => 'nullable|image|max:2048',
-            'fingerprint'       => 'nullable|file|max:4096',
+            //'fingerprint'       => 'nullable|string|max:255',
             'aadhar_card'       => 'nullable|file|max:4096',
             'contractor_id'     => 'nullable|exists:contractors,id',
             //'machine'           => 'nullable|string|max:255',
@@ -136,13 +136,14 @@ use Carbon\Carbon;
         }
 
         // ✅ Handle Fingerprint Upload
-        if ($request->hasFile('fingerprint')) {
-            $fingerprint = $request->file('fingerprint');
-            $fingerprintName = uniqid() . '.' . $fingerprint->getClientOriginalExtension();
-            $fingerprint->move(public_path('employees/fingerprints'), $fingerprintName);
-            $validated['fingerprint'] = 'employees/fingerprints/' . $fingerprintName;
-        }
-
+        // if ($request->hasFile('fingerprint')) {
+        //     $fingerprint = $request->file('fingerprint');
+        //     $fingerprintName = uniqid() . '.' . $fingerprint->getClientOriginalExtension();
+        //     $fingerprint->move(public_path('employees/fingerprints'), $fingerprintName);
+        //     $validated['fingerprint'] = 'employees/fingerprints/' . $fingerprintName;
+        // }
+        $validated['fingerprint'] = 'false';
+        $validated['fingerprint_template_data'] = null;
         // ✅ Handle Aadhaar Card Upload
         if ($request->hasFile('aadhar_card')) {
             $aadhar = $request->file('aadhar_card');

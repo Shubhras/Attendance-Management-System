@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AdminAuthController;
 Route::post('operator/login', [OperatorAuthController::class, 'login'])->name('login');
 // Route::post('login', [OperatorAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('employee/shifts', [OperatorAuthController::class, 'getShifts']);
     Route::get('/employees', [OperatorAuthController::class, 'getEmployees']);
     Route::get('/employees/{uuid}', [OperatorAuthController::class, 'getEmployeeDetails']);
     Route::get('/get-machines', [OperatorAuthController::class, 'getMachines']);
@@ -32,8 +33,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/operator/attendance/list', [OperatorAttendanceController::class, 'attendanceList']);
     //Route::get('/operator/attendance/pdf/all', [OperatorAttendanceController::class, 'exportAll']);
     Route::get('/operator/attendance/pdf/{employee_id}', [OperatorAttendanceController::class, 'exportEmployee']);
+
+// Fingerprint store route
+Route::post('operator/fingerprint/store', [OperatorAuthController::class, 'storeFingerprint']);
+// Route::post('attendance/fingerprint/verify', [AttendanceController::class, 'verifyFingerprint']);
+Route::get('/no-fingerprint/get', [OperatorAuthController::class, 'nofingerprintData']);
+Route::get('/with-fingerprint/get', [OperatorAuthController::class, 'withfingerprintData']);
+
 });
 // Admin Login Routes
-    Route::post('/admin/login', [AdminAuthController::class, 'login']);
-    Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::post('operator/logout', [OperatorAuthController::class, 'logout'])->middleware('auth:sanctum');
+    // Route::post('/admin/login', [AdminAuthController::class, 'login']);
+    // Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth:sanctum');
+    // Route::post('operator/logout', [OperatorAuthController::class, 'logout'])->middleware('auth:sanctum');

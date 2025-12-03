@@ -23,6 +23,7 @@ class Employee extends Model
         'gender',
         'photo',
         'fingerprint',
+        'fingerprint_template_data',
         'contractor_id',
         //'machine',
         'machine_id',
@@ -46,6 +47,7 @@ class Employee extends Model
         //'salary_monthly' => 'decimal:2',
         'salary_monthly' => 'decimal:2',
         'salary_daily' => 'decimal:2',
+        'fingerprint_template_data' => 'array',
     ];
 
     // ✅ Use UUID for route model binding
@@ -104,10 +106,10 @@ public function shift()
         return $value ? url($value) : null;
     }
 
-    public function getFingerprintAttribute($value)
-    {
-        return $value ? url($value) : null;
-    }
+    // public function getFingerprintAttribute($value)
+    // {
+    //     return $value ? url($value) : null;
+    // }
 
     public function getAadharCardAttribute($value)
     {
