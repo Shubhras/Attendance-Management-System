@@ -32,6 +32,65 @@ class SalaryController extends Controller
      * Calculate salary preview for given employee & month (not persist)
      * Request: employee_id, month (YYYY-MM)
      */
+// public function calculate(Request $request)
+// {
+//     $request->validate([
+//         'employee_id' => 'required|exists:employees,id',
+//         'month' => 'required|date_format:Y-m'
+//     ]);
+
+//     $employee = Employee::findOrFail($request->employee_id);
+//     $month = $request->month;
+//     $start = Carbon::parse($month.'-01')->startOfMonth();
+//     $end = Carbon::parse($month.'-01')->endOfMonth();
+//     $daysInMonth = $start->daysInMonth;
+
+//     $attendances = Attendance::where('employee_id', $employee->id)
+//         ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+//         ->get();
+
+//     $presentCount = $attendances->where('status','present')->count();
+//     $halfDayCount = $attendances->where('status','half_day')->count();
+//     $leaveCount = $attendances->where('status','leave')->count();
+//     $absentCount = $daysInMonth - ($presentCount + $halfDayCount + $leaveCount);
+
+//     // Salary calculations
+//     if ($employee->salary_type === 'monthly') {
+//         $perDay = $employee->salary_monthly / $daysInMonth;
+//         $payPresent = $perDay * $presentCount;
+//         $payHalf = $perDay * 0.5 * $halfDayCount;
+//     } else { // daily
+//         $perDay = $employee->salary_daily;
+//         $payPresent = $perDay * $presentCount;
+//         $payHalf = $perDay * 0.5 * $halfDayCount;
+//     }
+
+//     $gross = round($payPresent + $payHalf,2);
+//     $deductions = 0;
+//     $net = max(0, $gross - $deductions);
+
+//     $items = [
+//         ['title'=>'Present Days Pay', 'amount'=>$payPresent],
+//         ['title'=>'Half Day Pay', 'amount'=>$payHalf],
+//     ];
+
+//     return response()->json([
+//         'status'=>true,
+//         'data'=>[
+//             'employee'=>$employee,
+//             'month'=>$month,
+//             'total_days'=>$daysInMonth,
+//             'present'=>$presentCount,
+//             'half_day'=>$halfDayCount,
+//             'leave'=>$leaveCount,
+//             'absent'=>$absentCount,
+//             'gross'=>$gross,
+//             'deductions'=>$deductions,
+//             'net'=>$net,
+//             'items'=>$items
+//         ]
+//     ]);
+// }
 public function calculate(Request $request)
 {
     $request->validate([
@@ -41,53 +100,51 @@ public function calculate(Request $request)
 
     $employee = Employee::findOrFail($request->employee_id);
     $month = $request->month;
-    $start = Carbon::parse($month.'-01')->startOfMonth();
-    $end = Carbon::parse($month.'-01')->endOfMonth();
+
+    $start = Carbon::parse($month . '-01')->startOfMonth();
+    $end = Carbon::parse($month . '-01')->endOfMonth();
     $daysInMonth = $start->daysInMonth;
 
     $attendances = Attendance::where('employee_id', $employee->id)
         ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
         ->get();
 
-    $presentCount = $attendances->where('status','present')->count();
-    $halfDayCount = $attendances->where('status','half_day')->count();
-    $leaveCount = $attendances->where('status','leave')->count();
-    $absentCount = $daysInMonth - ($presentCount + $halfDayCount + $leaveCount);
+    // ↙️ New numeric status calculation
+    $presentCount = $attendances->where('status', 1)->count();
+    // $absentCount  = $attendances->where('status', 0)->count();
+    // $halfDayCount = $attendances->where('status', 2)->count();
+    $leaveCount   = $attendances->where('status', 0)->count();
 
-    // Salary calculations
+    // Salary calculation
     if ($employee->salary_type === 'monthly') {
         $perDay = $employee->salary_monthly / $daysInMonth;
-        $payPresent = $perDay * $presentCount;
-        $payHalf = $perDay * 0.5 * $halfDayCount;
-    } else { // daily
+    } else {
         $perDay = $employee->salary_daily;
-        $payPresent = $perDay * $presentCount;
-        $payHalf = $perDay * 0.5 * $halfDayCount;
     }
 
-    $gross = round($payPresent + $payHalf,2);
+    $payPresent = $perDay * $presentCount;
+    // $payHalf = $perDay * 0.5 * $halfDayCount; // Half day
+    $gross = round($payPresent, 2);
     $deductions = 0;
     $net = max(0, $gross - $deductions);
 
-    $items = [
-        ['title'=>'Present Days Pay', 'amount'=>$payPresent],
-        ['title'=>'Half Day Pay', 'amount'=>$payHalf],
-    ];
-
     return response()->json([
-        'status'=>true,
-        'data'=>[
-            'employee'=>$employee,
-            'month'=>$month,
-            'total_days'=>$daysInMonth,
-            'present'=>$presentCount,
-            'half_day'=>$halfDayCount,
-            'leave'=>$leaveCount,
-            'absent'=>$absentCount,
-            'gross'=>$gross,
-            'deductions'=>$deductions,
-            'net'=>$net,
-            'items'=>$items
+        'status' => true,
+        'data' => [
+            'employee' => $employee,
+            'month' => $month,
+            'total_days' => $daysInMonth,
+            'present' => $presentCount,
+            // 'half_day' => $halfDayCount,
+            'leave' => $leaveCount,
+            // 'absent' => $absentCount,
+            'gross' => $gross,
+            'deductions' => $deductions,
+            'net' => $net,
+            'items' => [
+                ['title' => 'Present Days Pay', 'amount' => $payPresent],
+                ['title' => 'Half Day Pay', 'amount' => $leaveCount],
+            ]
         ]
     ]);
 }

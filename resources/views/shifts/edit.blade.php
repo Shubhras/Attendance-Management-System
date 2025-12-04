@@ -9,7 +9,7 @@
 
     <h5 class="mb-3">Edit Shift</h5>
 
-    <form action="{{ route('shifts.update', $shift->uuid) }}" method="POST">
+    <form action="{{ route('shifts.update', $shift->id) }}" method="POST">
         @csrf
         @method('PUT')
 

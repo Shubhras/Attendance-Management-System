@@ -13,7 +13,7 @@ class Attendance extends Model
     protected $casts = [
         'fingerprint_template' => 'array',
         'scan_response' => 'array',
-        'date' => 'date',
+        'date' => 'datetime',
     ];
 
     public function employee() {

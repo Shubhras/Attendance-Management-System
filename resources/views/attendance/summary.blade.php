@@ -86,7 +86,7 @@
                 </tr>
             </thead>
 
-            <tbody>
+            <!-- <tbody>
                 @foreach($employees as $emp)
                     <tr>
                         <td class="emp-name">
@@ -117,7 +117,48 @@
                         @endfor
                     </tr>
                 @endforeach
-            </tbody>
+            </tbody> -->
+            <tbody>
+    @foreach($employees as $emp)
+        <tr>
+            <td class="emp-name">
+                <strong>{{ $emp->name }}</strong><br>
+                <small>{{ $emp->employee_code }}</small>
+            </td>
+
+            @for($d = 1; $d <= $daysInMonth; $d++)
+                @php
+                    // GET STATUS AS INT OR NULL
+                    $status = $attendanceMap[$emp->id][$d] ?? null;
+                @endphp
+
+                <td>
+                    @if($status === 1)
+                        <!-- Present -->
+                        <span class="status-icon text-present">✔</span>
+
+                    @elseif($status === 0)
+                        <!-- Absent -->
+                        <span class="status-icon text-absent">✘</span>
+
+                    @elseif($status === 2)
+                        <!-- Half Day (Optional future use) -->
+                        <span class="status-icon text-half">½</span>
+
+                    @elseif($status === 3)
+                        <!-- Leave (Optional) -->
+                        <span class="status-icon text-leave">❌</span>
+
+                    @else
+                        <!-- No entry -->
+                        <span class="text-muted">-</span>
+                    @endif
+                </td>
+            @endfor
+        </tr>
+    @endforeach
+</tbody>
+
         </table>
     </div>
 </div>

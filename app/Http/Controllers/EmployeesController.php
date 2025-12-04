@@ -180,19 +180,19 @@ use Carbon\Carbon;
         // Employee::create($validated);
         $employee = Employee::create($validated);
 // create dummy fingerprint template & today's pending attendance
-$dummy = [
-    'device' => 'MFS110',
-    'template_id' => (string) Str::uuid(),
-    'notes' => 'enrolled by admin (dummy)'
-];
+// $dummy = [
+//     'device' => 'MFS110',
+//     'template_id' => (string) Str::uuid(),
+//     'notes' => 'enrolled by admin (dummy)'
+// ];
 
-Attendance::create([
-    'employee_id' => $employee->id,
-    'date' => Carbon::now('Asia/Kolkata')->format('Y-m-d'),
-    'status' => 'pending',
-    'fingerprint_template' => $dummy,
-    'marked_by' => auth()->id()
-]);
+// Attendance::create([
+//     'employee_id' => $employee->id,
+//     'date' => Carbon::now('Asia/Kolkata')->format('Y-m-d'),
+//     'status' => 'pending',
+//     'fingerprint_template' => $dummy,
+//     'marked_by' => auth()->id()
+// ]);
         return redirect()->route('employees-get.index')->with('success', 'Employee created successfully!');
     }
 

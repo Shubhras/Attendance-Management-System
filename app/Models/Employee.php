@@ -34,6 +34,7 @@ class Employee extends Model
         'employee_type',
         'company_department',
         'employee_work_title',
+        'attendance_status',
         'joining_date',
         'is_operator',
         'employee_code',

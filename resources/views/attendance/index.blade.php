@@ -96,11 +96,23 @@ $subTitle = 'Manage Attendance';
 
                     <tbody>
                         @forelse($employees as $index => $emp)
-                        @php
+                        <!-- @php
                         $att = $attendanceMap[$emp->id] ?? null;
                         $status = $att->status ?? 'pending';
                         $clock_in = $att->clock_in ?? '';
                         $clock_out = $att->clock_out ?? '';
+                        @endphp -->
+                        {{-- @php
+    $att = $attendanceMap[$emp->id] ?? null;
+    $status = $att->status ?? 0;
+    $clock_in = $att->clock_in ? \Carbon\Carbon::parse($att->clock_in)->format('H:i') : '';
+    $clock_out = $att->clock_out ? \Carbon\Carbon::parse($att->clock_out)->format('H:i') : '';
+@endphp --}}
+                        @php
+                            $att = $attendanceMap[$emp->id] ?? null;
+                            $status = isset($att->status) ? (int)$att->status : null; // Convert to INT
+                            $clock_in = $att->clock_in ?? '';
+                            $clock_out = $att->clock_out ?? '';
                         @endphp
                         <tr>
                             <td>{{ $employees->firstItem() + $index }}</td>
@@ -110,14 +122,22 @@ $subTitle = 'Manage Attendance';
                             <td>{{ $emp->mobile }}</td>
                             <td>
                                 <input type="hidden" name="records[{{ $index }}][employee_id]" value="{{ $emp->id }}">
+                                <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
+                                    <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
+                                    <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
+                                </select> -->
                                 <select name="records[{{ $index }}][status]" class="form-select form-select-sm">
-                                    <option value="present" {{ $status === 'present' ? 'selected' : '' }}>Present
+                                    <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
+                                    <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
+                                </select>
+                                <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
+                                    <option value="1" {{ $status === '1' ? 'selected' : '' }}>Present
                                     </option>
                                     <option value="half_day" {{ $status === 'half_day' ? 'selected' : '' }}>Half Day</option>
-                                    <option value="leave" {{ $status === 'leave' ? 'selected' : '' }}>Leave</option>
+                                    <option value="0" {{ $status === '0' ? 'selected' : '' }}>Leave</option>
                                     <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending
                                     </option>
-                                </select>
+                                </select> -->
                             </td>
                             <td>
                                 <input type="time" name="records[{{ $index }}][clock_in]"

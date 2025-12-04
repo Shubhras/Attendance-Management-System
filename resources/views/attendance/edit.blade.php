@@ -24,10 +24,10 @@
             <div class="col-md-4">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select">
-                    <option value="present" {{ $attendance->status == 'present' ? 'selected' : '' }}>Present</option>
-                    <option value="half_day" {{ $attendance->status == 'half_day' ? 'selected' : '' }}>Half Day</option>
-                    <option value="leave" {{ $attendance->status == 'leave' ? 'selected' : '' }}>Leave</option>
-                    <option value="pending" {{ $attendance->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="1" {{ $attendance->status == 1 ? 'selected' : '' }}>Present</option>
+                    <!-- <option value="half_day" {{ $attendance->status == 'half_day' ? 'selected' : '' }}>Half Day</option> -->
+                    <option value="0" {{ $attendance->status == 0 ? 'selected' : '' }}>Leave</option>
+                    <!-- <option value="pending" {{ $attendance->status == 'pending' ? 'selected' : '' }}>Pending</option> -->
                 </select>
             </div>
 

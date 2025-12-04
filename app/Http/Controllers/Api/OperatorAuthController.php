@@ -571,6 +571,10 @@ public function getMachines(Request $request)
                 'company_department' => $employee->company_department,
                 'photo'         => $employee->photo,
                 'fingerprint'   => $employee->fingerprint,
+                'fingerprint_template_data'   => $employee->fingerprint_template_data,
+                'attendance_status'   => $employee->attendance_status,
+                'employee_work_title'   => $employee->employee_work_title,
+                'joining_date'   => $employee->joining_date,
                 'aadhar_card'   => $employee->aadhar_card,
                 'created_at'    => $employee->created_at,
                 'updated_at'    => $employee->updated_at,
@@ -602,7 +606,8 @@ public function getTotalCounts()
             'machines_count'    => Machine::count(),
             'contractor_count'  => Contractor::count(),
             'attendance_count'  => 0, // today,
-            'current_date'      => now()->format('Y-m-d')
+            'current_date'      => now()->format('Y-m-d'),
+            'fingerprint_false_count' => Employee::where('fingerprint', false)->count(),
             // 'attendance_count'  => Attendance::whereDate('created_at', today())->count() // today
         ]
     ]);
