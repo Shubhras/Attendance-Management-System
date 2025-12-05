@@ -129,6 +129,7 @@ $subTitle = 'Manage Attendance';
                                 <select name="records[{{ $index }}][status]" class="form-select form-select-sm">
                                     <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
                                     <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
+                                    <option value="0" {{ $status == 2 ? 'selected' : '' }}>Half day</option>
                                 </select>
                                 <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
                                     <option value="1" {{ $status === '1' ? 'selected' : '' }}>Present
@@ -148,11 +149,28 @@ $subTitle = 'Manage Attendance';
                                     class="form-control form-control-sm" value="{{ $clock_out }}">
                             </td>
                             <td class="text-center">
+                            @if($att)
+                                <a href="{{ route('attendance.edit', $att->id) }}" class="btn btn-sm btn-light" title="Edit">
+                                    <iconify-icon icon="mdi:eye"></iconify-icon>
+                                </a>
+                            @else
+                             <!-- If no attendance → show Mark button -->
+                                <a href="{{ route('attendance.singleMark', [
+                                        'employee_id' => $emp->id,
+                                        'date' => request('date')
+                                    ]) }}"
+                                class="btn btn-sm btn-primary">
+                                Mark
+                                </a>
+                                <!-- <span class="text-muted">—</span> -->
+                            @endif
+                            </td>
+                            <!-- <td class="text-center">
                                 <a href="{{ route('attendance.edit', $att->id ?? 0) }}" class="btn btn-sm btn-light"
                                     title="Edit">
                                     <iconify-icon icon="mdi:eye"></iconify-icon>
                                 </a>
-                            </td>
+                            </td> -->
                         </tr>
                         @empty
                         <tr>

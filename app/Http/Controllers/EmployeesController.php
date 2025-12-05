@@ -256,7 +256,7 @@ use Carbon\Carbon;
 
         $employee->update($validated);
 
-        return redirect()->route('employees-get.index')->with('success', 'Employee updated successfully!');
+        return redirect()->route('employees-get.index')->with('message', 'Employee updated successfully!');
     }
 
         public function show(Employee $employee)

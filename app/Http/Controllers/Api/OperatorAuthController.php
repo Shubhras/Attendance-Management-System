@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData,Shift};
+use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData,Shift,Attendance};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -29,6 +29,14 @@ class OperatorAuthController extends Controller
         $token = $user->createToken('operator-token')->plainTextToken;
         // 3️⃣ Match employee by employee_code
         $employee = Employee::where('employee_code', $user->employee_code)->first();
+            // Add photo to user object
+    if ($employee && $employee->photo) {
+        // $user->photo_url = asset('storage/' . $employee->photo);
+        $user->photo = $employee->photo; // if you want raw path also
+    } else {
+        // $user->photo_url = null;
+        $user->photo = null;
+    }
         return response()->json([
             'status' => 200,
             'token' => $token,
@@ -704,9 +712,30 @@ public function downloadContractorReport()
     // Download PDF
     return $pdf->download('contractor-report.pdf');
 }
+// public function downloadSingleContractorReport($contractor_id)
+// {
+//     // Fetch contractor + employees + shift
+//     $contractor = Contractor::with(['employees.shift'])->find($contractor_id);
+
+//     if (!$contractor) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Contractor not found',
+//         ], 404);
+//     }
+
+//     $generatedAt = Carbon::now('Asia/Kolkata')->format('Y-m-d H:i:s');
+
+//     // Load single-contractor PDF view
+//     $pdf = Pdf::loadView('reports.contractor_report', [
+//         'contractor' => $contractor,
+//         'generated_at' => $generatedAt,
+//     ])->setPaper('a4', 'portrait');
+
+//     return $pdf->download('contractor-' . $contractor->id . '-report.pdf');
+// }
 public function downloadSingleContractorReport($contractor_id)
 {
-    // Fetch contractor + employees + shift
     $contractor = Contractor::with(['employees.shift'])->find($contractor_id);
 
     if (!$contractor) {
@@ -717,15 +746,64 @@ public function downloadSingleContractorReport($contractor_id)
     }
 
     $generatedAt = Carbon::now('Asia/Kolkata')->format('Y-m-d H:i:s');
+    // MONTH + YEAR (default: current)
+    $year  = request('year', now()->year);
+    $month = request('month', now()->month);
 
-    // Load single-contractor PDF view
+    // ⭐ TOTAL DAYS OF MONTH
+    $currentMonthDays = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+    // -------------------------------------
+    // EMPLOYEE ATTENDANCE + SALARY SUMMARY
+    // -------------------------------------
+    $summary = [];
+
+    foreach ($contractor->employees as $emp) {
+
+        $monthlySalary = $emp->salary ?? 0;         // if no salary → 0
+        $perDayPay     = $monthlySalary > 0 ? ($monthlySalary / 30) : 0;
+
+        $present   = Attendance::where('employee_id', $emp->id)
+                       ->where('status', 1)
+                       ->count();
+
+        $leave     = Attendance::where('employee_id', $emp->id)
+                       ->where('status', 0)
+                       ->count();
+
+        $halfDay   = Attendance::where('employee_id', $emp->id)
+                       ->where('status', 2)
+                       ->count();
+
+        $salary_present = $present * $perDayPay;
+        $salary_half    = ($halfDay * $perDayPay) / 2;
+        $total_salary   = $salary_present + $salary_half;
+        // ⭐ TOTAL DAYS (present + leave + half day)
+        // $totalDays = $present + $leave + $halfDay;
+        $summary[] = [
+            'employee'       => $emp,
+            'present'        => $present,
+            'leave'          => $leave,
+            'half_day'       => $halfDay,
+            'per_day_pay'    => $perDayPay,
+            'salary_present' => $salary_present,
+            'salary_half'    => $salary_half,
+            'total_salary'   => $total_salary,
+            'month_days'     => $currentMonthDays,
+            //  'total_days'     => $totalDays,
+        ];
+    }
+
+    // LOAD PDF VIEW
     $pdf = Pdf::loadView('reports.contractor_report', [
         'contractor' => $contractor,
         'generated_at' => $generatedAt,
+        'summary' => $summary,
+         'month_days'   => $currentMonthDays,
     ])->setPaper('a4', 'portrait');
 
     return $pdf->download('contractor-' . $contractor->id . '-report.pdf');
 }
+
 public function storeThumb(Request $request)
 {
     try {

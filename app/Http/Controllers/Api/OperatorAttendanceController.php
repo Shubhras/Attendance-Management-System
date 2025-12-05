@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
+use App\Models\{Attendance,Shift};
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -77,18 +77,237 @@ class OperatorAttendanceController extends Controller
 //     ]);
 // }
 
+// Working with status true
+// public function markAttendance(Request $request)
+// {
+//     // Use provided datetime or current datetime
+//     $dateTime = $request->date ?? now()->format('Y-m-d H:i:s');
+
+//     // Validate the single record
+//     $validator = Validator::make($request->all(), [
+//         'employee_id' => 'required|exists:employees,id',
+//         'status'      => 'required|boolean',
+//         'clock_in'    => 'nullable|date_format:H:i',
+//         'clock_out'   => 'nullable|date_format:H:i',
+//         'date'        => 'nullable',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation error',
+//             'errors'  => $validator->errors()
+//         ], 422);
+//     }
+
+//     $markedBy = auth()->id();
+
+//     // Convert "true"/"false" string to boolean 1/0 if needed
+//     $status = filter_var($request->status, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+
+//     // Save/update the attendance record
+//     $attendance = Attendance::updateOrCreate(
+//         [
+//             'employee_id' => $request->employee_id,
+//             'date'        => $dateTime,
+//         ],
+//         [
+//             'employee_id' => $request->employee_id,
+//             'date'        => $dateTime,
+//             'status'      => $status,
+//             'clock_in'    => $request->clock_in ?? null,
+//             'clock_out'   => $request->clock_out ?? null,
+//             'marked_by'   => $markedBy
+//         ]
+//     );
+
+//     // ✅ Update employee's attendance_status and assign to variable
+//     $updateEmployee = Employee::where('id', $request->employee_id)
+//         ->update(['attendance_status' => $status]);
+
+//     return response()->json([
+//         'status'         => true,
+//         'message'        => 'Attendance marked successfully!',
+//         'date_used'      => $dateTime,
+//         'data'           => $attendance,
+//         // 'updateEmployee' => $updateEmployee // returns 1 if updated successfully
+//     ]);
+// }
+
+// Create date time logics
+// public function markAttendance(Request $request)
+// {
+//     // 1️⃣ Parse scan datetime
+//     $scanDateTime = $request->date
+//         ? Carbon::parse($request->date)
+//         : now();
+
+//     // 2️⃣ Validate input
+//     $validator = Validator::make($request->all(), [
+//         'employee_id' => 'required|exists:employees,id',
+//         'date'        => 'nullable|date',
+//         'status'      => 'required|boolean', // frontend scan true/false
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation error',
+//             'errors'  => $validator->errors()
+//         ], 422);
+//     }
+
+//     // 3️⃣ Fetch employee
+//     $employee = Employee::find($request->employee_id);
+//     $createdAt = Carbon::parse($employee->created_at);
+
+//     // 4️⃣ Calculate hours difference
+//     $diffHours = $createdAt->diffInHours($scanDateTime);
+
+//     // 5️⃣ Determine attendance status (1 = Present, 2 = Half Day, 0 = Leave)
+//     if ($diffHours <= 2) {
+//         $attendanceStatus = 1; // Present
+//     } elseif ($diffHours <= 3) {
+//         $attendanceStatus = 2; // Half Day
+//     } else {
+//         $attendanceStatus = 0; // Leave
+//     }
+
+//     // 6️⃣ Fetch or create attendance record for this day
+//     $attendance = Attendance::firstOrNew([
+//         'employee_id' => $employee->id,
+//         'date'        => $scanDateTime->format('Y-m-d'),
+//     ]);
+
+//     // 7️⃣ Set clock_in / clock_out automatically
+//     if (!$attendance->exists || !$attendance->clock_in) {
+//         $attendance->clock_in = $scanDateTime->format('H:i');
+//         $attendance->clock_out = null;
+//     } else {
+//         $attendance->clock_out = $scanDateTime->format('H:i');
+//     }
+
+//     // 8️⃣ Save attendance
+//     $attendance->status = $attendanceStatus;
+//     $attendance->marked_by = auth()->id();
+//     $attendance->scan_status = $request->status ? 1 : 0;
+//     $attendance->save();
+
+//     // 9️⃣ Update employee current attendance status
+//     // $employee->update(['attendance_status' => $attendanceStatus]);
+// Employee::where('id', $employee->id)
+//         ->update(['attendance_status' => $attendanceStatus]);
+//     // 10️⃣ Return response
+//     return response()->json([
+//         'status'                  => true,
+//         'message'                 => 'Attendance marked successfully',
+//         'scan_status_received'    => $request->status,
+//         'difference_hours'        => $diffHours,
+//         'final_attendance_status' => $attendanceStatus,
+//         'data'                    => $attendance
+//     ]);
+// }
+
+
+// Working for day Shift
+// public function markAttendance(Request $request)
+// {
+//     $scanDateTime = $request->date
+//         ? Carbon::parse($request->date)
+//         : now();
+
+//     $validator = Validator::make($request->all(), [
+//         'employee_id' => 'required|exists:employees,id',
+//         'date'        => 'nullable|date',
+//         'status'      => 'required|boolean',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation error',
+//             'errors'  => $validator->errors()
+//         ], 422);
+//     }
+
+//     $employee = Employee::find($request->employee_id);
+//     $shift = Shift::find($employee->shift_id);
+
+//     if (!$shift) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Shift not assigned to this employee'
+//         ], 400);
+//     }
+
+//     // Build shift times
+//     $shiftStart = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_in_time);
+//     $shiftEnd   = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_out_time);
+
+//     // Night shift (end time next day)
+//     if ($shiftEnd->lt($shiftStart)) {
+//         $shiftEnd->addDay();
+//     }
+
+//     // -----------------------------
+//     // MAIN FIX: if scanned BEFORE shift start
+//     // -----------------------------
+//     if ($scanDateTime->lt($shiftStart)) {
+//         $attendanceStatus = 0;  // Leave
+//         $diffHours = 0;
+//     } else {
+//         // Calculate late hours
+//         $diffHours = $shiftStart->diffInHours($scanDateTime);
+
+//         if ($diffHours <= 2) {
+//             $attendanceStatus = 1; // Present
+//         } elseif ($diffHours <= 3) {
+//             $attendanceStatus = 2; // Half Day
+//         } else {
+//             $attendanceStatus = 0; // Leave
+//         }
+//     }
+
+//     // Save attendance
+//     $attendance = Attendance::firstOrNew([
+//         'employee_id' => $employee->id,
+//         'date'        => $scanDateTime->format('Y-m-d'),
+//     ]);
+
+//     if (!$attendance->exists || !$attendance->clock_in) {
+//         $attendance->clock_in = $scanDateTime->format('H:i');
+//         $attendance->clock_out = null;
+//     } else {
+//         $attendance->clock_out = $scanDateTime->format('H:i');
+//     }
+
+//     $attendance->status       = $attendanceStatus;
+//     $attendance->scan_status  = $request->status ? 1 : 0;
+//     $attendance->marked_by    = auth()->id();
+//     $attendance->save();
+
+//     Employee::where('id', $employee->id)
+//         ->update(['attendance_status' => $attendanceStatus]);
+
+//     return response()->json([
+//         'status'                  => true,
+//         'message'                 => 'Attendance marked successfully',
+//         'difference_hours'        => $diffHours,
+//         'final_attendance_status' => $attendanceStatus,
+//         'data'                    => $attendance
+//     ]);
+// }
+
 public function markAttendance(Request $request)
 {
-    // Use provided datetime or current datetime
-    $dateTime = $request->date ?? now()->format('Y-m-d H:i:s');
+    $scanDateTime = $request->date
+        ? Carbon::parse($request->date)
+        : now();
 
-    // Validate the single record
     $validator = Validator::make($request->all(), [
         'employee_id' => 'required|exists:employees,id',
+        'date'        => 'nullable|date',
         'status'      => 'required|boolean',
-        'clock_in'    => 'nullable|date_format:H:i',
-        'clock_out'   => 'nullable|date_format:H:i',
-        'date'        => 'nullable',
     ]);
 
     if ($validator->fails()) {
@@ -99,40 +318,96 @@ public function markAttendance(Request $request)
         ], 422);
     }
 
-    $markedBy = auth()->id();
+    $employee = Employee::find($request->employee_id);
+    $shift = Shift::find($employee->shift_id);
 
-    // Convert "true"/"false" string to boolean 1/0 if needed
-    $status = filter_var($request->status, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+    if (!$shift) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Shift not assigned to this employee'
+        ], 400);
+    }
 
-    // Save/update the attendance record
-    $attendance = Attendance::updateOrCreate(
-        [
-            'employee_id' => $request->employee_id,
-            'date'        => $dateTime,
-        ],
-        [
-            'employee_id' => $request->employee_id,
-            'date'        => $dateTime,
-            'status'      => $status,
-            'clock_in'    => $request->clock_in ?? null,
-            'clock_out'   => $request->clock_out ?? null,
-            'marked_by'   => $markedBy
-        ]
-    );
+    // -------------------------
+    // Build shift times
+    // -------------------------
+    $shiftStart = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_in_time);
+    $shiftEnd   = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_out_time);
 
-    // ✅ Update employee's attendance_status and assign to variable
-    $updateEmployee = Employee::where('id', $request->employee_id)
-        ->update(['attendance_status' => $status]);
+    $isNightShift = false;
+
+    // Detect night shift
+    if ($shiftEnd->lt($shiftStart)) {
+        $isNightShift = true;
+        $shiftEnd->addDay();                // night shift ends next day
+    }
+
+    // -------------------------
+    // Correct ATTENDANCE DATE on night shift
+    // -------------------------
+    if ($isNightShift && $scanDateTime->lt($shiftStart)) {
+        // Example:
+        // Shift = 20:00 (Dec 5)
+        // Scan = 05:00 (Dec 6)
+        // Real attendance date = Dec 5
+        $attendanceDate = $shiftStart->copy()->subDay()->format('Y-m-d');
+        $shiftStart->subDay();  // shift start moves to previous day
+    } else {
+        $attendanceDate = $scanDateTime->format('Y-m-d');
+    }
+
+    // -------------------------
+    // Determine late / present / half / leave
+    // -------------------------
+
+    if ($scanDateTime->lt($shiftStart)) {
+        // too early (e.g., 5 AM for morning shift)
+        $attendanceStatus = 0; // Leave
+        $diffHours = 0;
+    } else {
+        $diffHours = $shiftStart->diffInHours($scanDateTime);
+
+        if ($diffHours <= 2) {
+            $attendanceStatus = 1; // Present
+        } elseif ($diffHours <= 3) {
+            $attendanceStatus = 2; // Half Day
+        } else {
+            $attendanceStatus = 0; // Leave
+        }
+    }
+
+    // -------------------------
+    // Save attendance with correct DATE
+    // -------------------------
+    $attendance = Attendance::firstOrNew([
+        'employee_id' => $employee->id,
+        'date'        => $attendanceDate,
+    ]);
+
+    if (!$attendance->exists || !$attendance->clock_in) {
+        $attendance->clock_in = $scanDateTime->format('H:i');
+        $attendance->clock_out = null;
+    } else {
+        $attendance->clock_out = $scanDateTime->format('H:i');
+    }
+
+    $attendance->status       = $attendanceStatus;
+    $attendance->scan_status  = $request->status ? 1 : 0;
+    $attendance->marked_by    = auth()->id();
+    $attendance->save();
+
+    Employee::where('id', $employee->id)
+        ->update(['attendance_status' => $attendanceStatus]);
 
     return response()->json([
-        'status'         => true,
-        'message'        => 'Attendance marked successfully!',
-        'date_used'      => $dateTime,
-        'data'           => $attendance,
-        // 'updateEmployee' => $updateEmployee // returns 1 if updated successfully
+        'status'                  => true,
+        'message'                 => 'Attendance marked successfully',
+        'attendance_date_used'    => $attendanceDate,
+        'difference_hours'        => $diffHours,
+        'final_attendance_status' => $attendanceStatus,
+        'data'                    => $attendance
     ]);
 }
-
 
 
 
@@ -239,6 +514,134 @@ public function attendanceList(Request $request)
     ]);
 }
 
+public function attendanceByEmployee(Request $request, $employee_id)
+{
+    // dd($employee_id);
+    // print_r("employee_id: " . $employee_id);die;
+    $date = $request->get('date');
+    $search = $request->get('search');
+    $perPage = (int) $request->get('per_page', 10);
+
+    $query = Attendance::with('employee')
+        ->where('employee_id', $employee_id) // 🔥 REQUIRED FILTER
+        ->when($date, fn($q) => $q->whereDate('date', $date))
+        ->when($search, function ($q, $search) {
+            $q->whereHas('employee', function ($emp) use ($search) {
+                $emp->where('name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%");
+            });
+        })
+        ->orderBy('date', 'desc');
+
+    $attendances = $query->paginate($perPage);
+
+    return response()->json([
+        'status' => true,
+        'data' => $attendances->items(),
+        'pagination' => [
+            'total'        => $attendances->total(),
+            'per_page'     => $attendances->perPage(),
+            'current_page' => $attendances->currentPage(),
+            'last_page'    => $attendances->lastPage(),
+            'next_page_url'=> $attendances->nextPageUrl(),
+            'prev_page_url'=> $attendances->previousPageUrl(),
+        ],
+    ]);
+}
+
+public function monthlyAttendance(Request $request, $employee_id)
+{
+    $timezone = 'Asia/Kolkata'; // Set your local timezone
+
+    // -----------------------------
+    // Determine query type: single date or whole month
+    // -----------------------------
+    $isSingleDate = false;
+
+    if ($request->has('date')) {
+        try {
+            $parsed = Carbon::parse($request->get('date'))->timezone($timezone);
+            $year  = $parsed->year;
+            $month = $parsed->month;
+            $isSingleDate = true; // Only one day
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'error'  => 'Invalid date format. Use YYYY-MM-DD.'
+            ], 400);
+        }
+    } else {
+        $year  = (int) $request->get('year', date('Y'));
+        $month = (int) $request->get('month', date('m'));
+    }
+
+    $perPage = (int) $request->get('per_page', 31);
+
+    // -----------------------------
+    // Restrict to current month + past 3 months
+    // -----------------------------
+    $allowedStart = Carbon::now($timezone)->startOfMonth()->subMonths(3);
+    $requestedMonth = Carbon::createFromDate($year, $month, 1, $timezone);
+
+    if ($requestedMonth->lt($allowedStart)) {
+        return response()->json([
+            'status' => false,
+            'error'  => 'You can request attendance only for current month and past 3 months.'
+        ], 400);
+    }
+
+    // -----------------------------
+    // Build attendance query
+    // -----------------------------
+    $query = Attendance::where('employee_id', $employee_id);
+
+    if ($isSingleDate) {
+        // Only that specific day
+        $query->whereDate('date', $parsed->toDateString());
+    } else {
+        // Whole month
+        $startOfMonth = $requestedMonth->copy()->startOfMonth();
+        $endOfMonth   = $requestedMonth->copy()->endOfMonth();
+        $query->whereBetween('date', [$startOfMonth, $endOfMonth]);
+    }
+
+    $query->orderBy('date', 'asc');
+    $attendances = $query->paginate($perPage);
+
+    // -----------------------------
+    // Summary counts
+    // -----------------------------
+    $summaryQuery = clone $query;
+    $summary = [
+        'present'  => (clone $summaryQuery)->where('status', 1)->count(),
+        'leave'    => (clone $summaryQuery)->where('status', 0)->count(),
+        'half_day' => (clone $summaryQuery)->where('status', 2)->count(),
+    ];
+
+    // -----------------------------
+    // Response
+    // -----------------------------
+    return response()->json([
+        'status' => true,
+        'year'   => $year,
+        'month'  => $month,
+        'data'   => $attendances->items(), // Only existing attendance records
+        'summary'=> $summary,
+        'pagination' => [
+            'total'        => $attendances->total(),
+            'per_page'     => $attendances->perPage(),
+            'current_page' => $attendances->currentPage(),
+            'last_page'    => $attendances->lastPage(),
+            'next_page_url'=> $attendances->nextPageUrl(),
+            'prev_page_url'=> $attendances->previousPageUrl(),
+        ],
+    ]);
+}
+
+
+
+
     /* ------------------------------------------
        5️⃣ EXPORT PDF (ALL Employees Under Operator)
     -------------------------------------------*/
@@ -286,4 +689,153 @@ public function attendanceList(Request $request)
 
         return $pdf->download("{$employee->name}-attendance.pdf");
     }
+// public function employeeAttendancePdf(Request $request)
+// {
+//     $timezone = 'Asia/Kolkata';
+
+//     $request->validate([
+//         'start_date' => 'required|date',
+//         'end_date'   => 'required|date|after_or_equal:start_date',
+//     ]);
+
+//     // USE DATE ONLY
+//     $startDate = Carbon::parse($request->start_date)->toDateString();
+//     $endDate   = Carbon::parse($request->end_date)->toDateString();
+
+//     // CORRECT TOTAL DAYS (no decimals)
+//     $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+
+//     // GET ALL EMPLOYEES
+//     $employees = Employee::all();
+
+//     if ($employees->count() == 0) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'No employees found'
+//         ], 404);
+//     }
+
+//     $reportData = [];
+
+//     foreach ($employees as $emp) {
+
+//         $presentCount = Attendance::where('employee_id', $emp->id)
+//             ->whereDate('date', '>=', $startDate)
+//             ->whereDate('date', '<=', $endDate)
+//             ->where('status', 1)
+//             ->count();
+
+//         $leaveCount = Attendance::where('employee_id', $emp->id)
+//             ->whereDate('date', '>=', $startDate)
+//             ->whereDate('date', '<=', $endDate)
+//             ->where('status', 0)
+//             ->count();
+
+//         $halfDayCount = Attendance::where('employee_id', $emp->id)
+//             ->whereDate('date', '>=', $startDate)
+//             ->whereDate('date', '<=', $endDate)
+//             ->where('status', 2)
+//             ->count();
+
+//         $reportData[] = [
+//             'employee'   => $emp,
+//             'present'    => $presentCount,
+//             'leave'      => $leaveCount,
+//             'half_day'   => $halfDayCount,
+//             'total_days' => $totalDays,
+//         ];
+//     }
+
+//     $generated_at = now($timezone)->format('d-m-Y h:i A');
+
+//     $pdf = PDF::loadView('reports.employee_attendance', [
+//         'reportData'   => $reportData,
+//         'startDate'    => Carbon::parse($startDate)->format('d M Y'),
+//         'endDate'      => Carbon::parse($endDate)->format('d M Y'),
+//         'generated_at' => $generated_at,
+//     ])->setPaper('A4', 'portrait');
+
+//     return $pdf->download("attendance-report-{$startDate}-to-{$endDate}.pdf");
+// }
+public function employeeAttendancePdf(Request $request)
+{
+    $timezone = 'Asia/Kolkata';
+
+    $request->validate([
+        'start_date' => 'required|date',
+        'end_date'   => 'required|date|after_or_equal:start_date',
+    ]);
+
+    $startDate = Carbon::parse($request->start_date)->toDateString();
+    $endDate   = Carbon::parse($request->end_date)->toDateString();
+
+    $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+
+    $employees = Employee::all();
+
+    if ($employees->count() == 0) {
+        return response()->json([
+            'status' => false,
+            'message' => 'No employees found'
+        ], 404);
+    }
+
+    $reportData = [];
+
+    foreach ($employees as $emp) {
+
+        // Attendance
+        $present = Attendance::where('employee_id', $emp->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->where('status', 1)
+            ->count();
+
+        $leave = Attendance::where('employee_id', $emp->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->where('status', 0)
+            ->count();
+
+        $halfDay = Attendance::where('employee_id', $emp->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->where('status', 2)
+            ->count();
+
+        // ------------ SALARY CALCULATION ------------
+        if ($emp->salary_type === 'monthly') {
+            $perDay = $emp->salary_monthly / $totalDays;
+        } else {
+            $perDay = $emp->salary_daily;
+        }
+
+        $presentSalary = $present * $perDay;
+        $halfSalary = $halfDay * ($perDay / 2);
+
+        $totalSalary = round($presentSalary + $halfSalary, 2);
+
+        $reportData[] = [
+            'employee'      => $emp,
+            'total_days'    => $totalDays,
+            'present'       => $present,
+            'leave'         => $leave,
+            'half_day'      => $halfDay,
+            'per_day_pay'   => round($perDay, 2),
+            'salary_present'=> round($presentSalary, 2),
+            'salary_half'   => round($halfSalary, 2),
+            'total_salary'  => $totalSalary,
+        ];
+    }
+
+    $generated_at = now($timezone)->format('d-m-Y h:i A');
+
+    $pdf = PDF::loadView('reports.employee_attendance', [
+        'reportData'   => $reportData,
+        'startDate'    => Carbon::parse($startDate)->format('d M Y'),
+        'endDate'      => Carbon::parse($endDate)->format('d M Y'),
+        'generated_at' => $generated_at,
+    ])->setPaper('A4', 'landscape');
+
+    return $pdf->download("employee_attendance-{$startDate}-to-{$endDate}.pdf");
+}
+
+
 }

@@ -31,8 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Reports
     Route::get('/operator/attendance/list', [OperatorAttendanceController::class, 'attendanceList']);
+    Route::get('/operator/attendance/employee/{employee_id}', [OperatorAttendanceController::class, 'attendanceByEmployee']);
+    Route::get('/operator/employees/{employee_id}/attendance/monthly', [OperatorAttendanceController::class, 'monthlyAttendance']);
     //Route::get('/operator/attendance/pdf/all', [OperatorAttendanceController::class, 'exportAll']);
     Route::get('/operator/attendance/pdf/{employee_id}', [OperatorAttendanceController::class, 'exportEmployee']);
+
+    Route::get('/operator/attendance/report/pdf', [OperatorAttendanceController::class, 'employeeAttendancePdf']);
 
 // Fingerprint store route
 Route::post('operator/fingerprint/store', [OperatorAuthController::class, 'storeFingerprint']);

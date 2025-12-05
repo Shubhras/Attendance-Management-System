@@ -372,6 +372,10 @@
                     Attendance
                 </a>
             </li>
+                                            <li>
+                        <a href='/operators'><i class="ri-user-3-line text-xl me-2 w-auto"></i> Assign
+                            Operators</a>
+                    </li>
             <li>
                 <a href="/attendance-summary">
                     <i class="ri-bar-chart-line text-xl me-2 w-auto"></i>

@@ -245,7 +245,11 @@ Route::get('/attendance/mark', [AttendanceController::class, 'mark'])->name('att
 Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store');
 Route::get('/attendance/{id}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
 Route::post('/attendance/{id}/update', [AttendanceController::class, 'update'])->name('attendance.update');
+Route::get('/attendance/mark', [AttendanceController::class, 'singleMarkForm'])
+    ->name('attendance.singleMark');
 
+Route::post('/attendance/mark', [AttendanceController::class, 'storeSingle'])
+    ->name('attendance.storeSingle');
 // PDF
 Route::get('/attendance-export/all', [AttendanceController::class, 'exportAll'])->name('attendance.exportAll');
 Route::get('/attendance-export/employee/{id}', [AttendanceController::class, 'exportEmployee'])->name('attendance.exportEmployee');
