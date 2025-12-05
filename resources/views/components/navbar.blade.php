@@ -19,7 +19,7 @@
             <div class="d-flex flex-wrap align-items-center gap-3">
                 <button type="button" data-theme-toggle
                     class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"></button>
-                <div class="dropdown d-none d-sm-inline-block">
+                <!-- <div class="dropdown d-none d-sm-inline-block">
                     <button
                         class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
                         type="button" data-bs-toggle="dropdown">
@@ -139,9 +139,10 @@
                             </div>
                         </div>
                     </div>
-                </div><!-- Language dropdown end -->
+                </div> -->
+                <!-- Language dropdown end -->
 
-                <div class="dropdown">
+                <!-- <div class="dropdown">
                     <button
                         class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
                         type="button" data-bs-toggle="dropdown">
@@ -270,9 +271,10 @@
                                 Message</a>
                         </div>
                     </div>
-                </div><!-- Message dropdown end -->
+                </div> -->
+                <!-- Message dropdown end -->
 
-                <div class="dropdown">
+                <!-- <div class="dropdown">
                     <button
                         class="has-indicator w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"
                         type="button" data-bs-toggle="dropdown">
@@ -382,7 +384,8 @@
                         </div>
 
                     </div>
-                </div><!-- Notification dropdown end -->
+                </div> -->
+                <!-- Notification dropdown end -->
 
                 <div class="dropdown">
                     <button class="d-flex justify-content-center align-items-center rounded-circle" type="button"
@@ -402,14 +405,14 @@
                             </button>
                         </div>
                         <ul class="to-top-list">
-                            <li>
+                            <!-- <li>
                                 <a class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
                                     href="{{ route('viewProfile') }}">
                                     <iconify-icon icon="solar:user-linear" class="icon text-xl"></iconify-icon> My
                                     Profile
                                 </a>
-                            </li>
-                            <li>
+                            </li> -->
+                            <!-- <li>
                                 <a class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-primary d-flex align-items-center gap-3"
                                     href="{{ route('email') }}">
                                     <iconify-icon icon="tabler:message-check" class="icon text-xl"></iconify-icon> Inbox
@@ -421,7 +424,7 @@
                                     <iconify-icon icon="icon-park-outline:setting-two" class="icon text-xl">
                                     </iconify-icon> Setting
                                 </a>
-                            </li>
+                            </li> -->
                             <li>
                                 <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
                                     @csrf

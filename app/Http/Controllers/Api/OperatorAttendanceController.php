@@ -782,48 +782,98 @@ public function employeeAttendancePdf(Request $request)
 
     $reportData = [];
 
-    foreach ($employees as $emp) {
+    // foreach ($employees as $emp) {
 
-        // Attendance
-        $present = Attendance::where('employee_id', $emp->id)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', 1)
-            ->count();
+    //     // Attendance
+    //     $present = Attendance::where('employee_id', $emp->id)
+    //         ->whereBetween('date', [$startDate, $endDate])
+    //         ->where('status', 1)
+    //         ->count();
 
-        $leave = Attendance::where('employee_id', $emp->id)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', 0)
-            ->count();
+    //     $leave = Attendance::where('employee_id', $emp->id)
+    //         ->whereBetween('date', [$startDate, $endDate])
+    //         ->where('status', 0)
+    //         ->count();
 
-        $halfDay = Attendance::where('employee_id', $emp->id)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->where('status', 2)
-            ->count();
+    //     $halfDay = Attendance::where('employee_id', $emp->id)
+    //         ->whereBetween('date', [$startDate, $endDate])
+    //         ->where('status', 2)
+    //         ->count();
 
-        // ------------ SALARY CALCULATION ------------
-        if ($emp->salary_type === 'monthly') {
-            $perDay = $emp->salary_monthly / $totalDays;
-        } else {
-            $perDay = $emp->salary_daily;
-        }
+    //     // ------------ SALARY CALCULATION ------------
+    //     if ($emp->salary_type === 'monthly') {
+    //         $perDay = $emp->salary_monthly / $totalDays;
+    //     } else {
+    //         $perDay = $emp->salary_daily;
+    //     }
 
-        $presentSalary = $present * $perDay;
-        $halfSalary = $halfDay * ($perDay / 2);
+    //     $presentSalary = $present * $perDay;
+    //     $halfSalary = $halfDay * ($perDay / 2);
 
-        $totalSalary = round($presentSalary + $halfSalary, 2);
+    //     $totalSalary = round($presentSalary + $halfSalary, 2);
 
-        $reportData[] = [
-            'employee'      => $emp,
-            'total_days'    => $totalDays,
-            'present'       => $present,
-            'leave'         => $leave,
-            'half_day'      => $halfDay,
-            'per_day_pay'   => round($perDay, 2),
-            'salary_present'=> round($presentSalary, 2),
-            'salary_half'   => round($halfSalary, 2),
-            'total_salary'  => $totalSalary,
-        ];
+    //     $reportData[] = [
+    //         'employee'      => $emp,
+    //         'total_days'    => $totalDays,
+    //         'present'       => $present,
+    //         'leave'         => $leave,
+    //         'half_day'      => $halfDay,
+    //         'per_day_pay'   => round($perDay, 2),
+    //         'salary_present'=> round($presentSalary, 2),
+    //         'salary_half'   => round($halfSalary, 2),
+    //         'total_salary'  => $totalSalary,
+    //     ];
+    // }
+foreach ($employees as $emp) {
+
+    // Attendance
+    $present = Attendance::where('employee_id', $emp->id)
+        ->whereBetween('date', [$startDate, $endDate])
+        ->where('status', 1)
+        ->count();
+
+    $leave = Attendance::where('employee_id', $emp->id)
+        ->whereBetween('date', [$startDate, $endDate])
+        ->where('status', 0)
+        ->count();
+
+    $halfDay = Attendance::where('employee_id', $emp->id)
+        ->whereBetween('date', [$startDate, $endDate])
+        ->where('status', 2)
+        ->count();
+
+    // Salary calc
+    if ($emp->salary_type === 'monthly') {
+        $perDay = $emp->salary_monthly / $totalDays;
+    } else {
+        $perDay = $emp->salary_daily;
     }
+
+    $presentSalary = $present * $perDay;
+    $halfSalary = $halfDay * ($perDay / 2);
+    $totalSalary = round($presentSalary + $halfSalary, 2);
+
+    // NEW FIELDS
+    $type = $emp->employee_type === 'company' ? 'Company' : 'Contractor';
+
+    $contractorName = $emp->employee_type === 'contractor'
+        ? optional($emp->contractor)->name
+        : '-';
+
+    $reportData[] = [
+        'employee'        => $emp,
+        'type'            => $type,
+        'contractor_name' => $contractorName,
+        'total_days'      => $totalDays,
+        'present'         => $present,
+        'leave'           => $leave,
+        'half_day'        => $halfDay,
+        'per_day_pay'     => round($perDay, 2),
+        'salary_present'  => round($presentSalary, 2),
+        'salary_half'     => round($halfSalary, 2),
+        'total_salary'    => $totalSalary,
+    ];
+}
 
     $generated_at = now($timezone)->format('d-m-Y h:i A');
 

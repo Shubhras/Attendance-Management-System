@@ -2,6 +2,32 @@
 @php $title='Salary'; $subTitle='Salary Payments'; @endphp
 
 @section('content')
+<!-- Flash Messages -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            <strong>Success!</strong> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <strong>Error!</strong> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <strong>Validation Error!</strong> Please check the form below.
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 <div class="card radius-12 p-24">
     <div class="d-flex justify-content-between mb-3">
         <h5>Salary Payments</h5>
@@ -117,13 +143,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await res.json();
         if(!data.status) { calcResult.innerHTML = 'Error'; return; }
         const d = data.data;
+        console.log('dddddddddddddd',d);
+        
         calcResult.innerHTML = `
             <div>
                 <strong>Total Days:</strong> ${d.total_days} <br/>
                 <strong>Present:</strong> ${d.present} <br/>
                 <strong>Half Days:</strong> ${d.half_day} <br/>
                 <strong>Leave:</strong> ${d.leave} <br/>
-                <strong>Absent:</strong> ${d.absent} <br/>
                 <strong>Gross:</strong> ${d.gross} <br/>
                 <strong>Net:</strong> ${d.net}
             </div>

@@ -97,6 +97,8 @@
                     <th>Emp Code</th>
                     <th>Name</th>
                     <th>Mobile</th>
+                    <th>Employee Type</th>
+                    <th>Contractor</th>
                     <th>Total Days</th>
                     <th>Present</th>
                     <th>Leave</th>
@@ -115,6 +117,8 @@
                     <td>{{ $row['employee']->employee_code }}</td>
                     <td>{{ $row['employee']->name }}</td>
                     <td>{{ $row['employee']->mobile }}</td>
+                    <td>{{ $row['type'] }}</td>
+                    <td>{{ $row['contractor_name'] }}</td>
                     <td>{{ $row['total_days'] }}</td>
                     <td>{{ $row['present'] }}</td>
                     <td>{{ $row['leave'] }}</td>

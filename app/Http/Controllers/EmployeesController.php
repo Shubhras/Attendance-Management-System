@@ -153,11 +153,27 @@ use Carbon\Carbon;
         }
 
         // ✅ Generate Employee Code
+        // if ($validated['employee_type'] === 'company') {
+        //     // Company employees use EMP-01 → EMP-999
+        //     $count = Employee::where('employee_type', 'company')->count() + 1;
+        //     $validated['employee_code'] = 'EMP-' . str_pad($count, 2, '0', STR_PAD_LEFT);
+        // } 
         if ($validated['employee_type'] === 'company') {
-            // Company employees use EMP-01 → EMP-999
-            $count = Employee::where('employee_type', 'company')->count() + 1;
-            $validated['employee_code'] = 'EMP-' . str_pad($count, 2, '0', STR_PAD_LEFT);
-        } else {
+            $lastEmp = Employee::where('employee_type', 'company')
+                ->where('employee_code', 'like', 'EMP-%')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($lastEmp) {
+                $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastEmp->employee_code);
+                $nextNumber = $lastNumber + 1;
+            } else {
+                $nextNumber = 1;
+            }
+
+            $validated['employee_code'] = 'EMP-' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
+        }
+        else {
             // Contractor employees use CONT-XXXX based on contractor code range
             $contractor = Contractor::findOrFail($validated['contractor_id']);
             $lastEmp = Employee::where('contractor_id', $contractor->id)
@@ -256,7 +272,7 @@ use Carbon\Carbon;
 
         $employee->update($validated);
 
-        return redirect()->route('employees-get.index')->with('message', 'Employee updated successfully!');
+        return redirect()->route('employees-get.index')->with('success', 'Employee updated successfully!');
     }
 
         public function show(Employee $employee)
