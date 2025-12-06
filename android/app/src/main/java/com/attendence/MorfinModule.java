@@ -143,6 +143,9 @@
 package com.attendence;
 
 import android.util.Base64;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import java.io.ByteArrayOutputStream;
 
 import com.facebook.react.bridge.*;
 import com.mantra.morfinauth.DeviceInfo;
@@ -254,6 +257,33 @@ public class MorfinModule extends ReactContextBaseJavaModule implements MorfinAu
         }
     }
 
+    // @ReactMethod
+    // public void getImage(Promise promise) {
+    //     try {
+    //         if (lastInfo == null) {
+    //             promise.reject("NO_INIT", "Device not initialized");
+    //             return;
+    //         }
+
+    //         int size = lastInfo.Width * lastInfo.Height + 1111;
+    //         byte[] imgBuf = new byte[size];
+    //         int[] tSize = new int[1];
+
+    //         int ret = morfinAuth.GetImage(imgBuf, tSize, 1, ImageFormat.BMP);
+
+    //         if (ret == 0) {
+    //             byte[] finalData = new byte[tSize[0]];
+    //             System.arraycopy(imgBuf, 0, finalData, 0, tSize[0]);
+
+    //             String base64 = Base64.encodeToString(finalData, Base64.DEFAULT);
+    //             promise.resolve(base64);
+    //         } else {
+    //             promise.reject("IMAGE_FAIL", morfinAuth.GetErrorMessage(ret));
+    //         }
+    //     } catch (Exception e) {
+    //         promise.reject("ERR", e);
+    //     }
+    // }
     @ReactMethod
     public void getImage(Promise promise) {
         try {
@@ -261,24 +291,29 @@ public class MorfinModule extends ReactContextBaseJavaModule implements MorfinAu
                 promise.reject("NO_INIT", "Device not initialized");
                 return;
             }
-
+    
             int size = lastInfo.Width * lastInfo.Height + 1111;
             byte[] imgBuf = new byte[size];
             int[] tSize = new int[1];
-
+    
             int ret = morfinAuth.GetImage(imgBuf, tSize, 1, ImageFormat.BMP);
-
+    
             if (ret == 0) {
                 byte[] finalData = new byte[tSize[0]];
                 System.arraycopy(imgBuf, 0, finalData, 0, tSize[0]);
-
-                String base64 = Base64.encodeToString(finalData, Base64.DEFAULT);
+    
+                Bitmap bmp = BitmapFactory.decodeByteArray(finalData, 0, finalData.length);
+    
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
+    
+                String base64 = Base64.encodeToString(stream.toByteArray(), Base64.DEFAULT);
                 promise.resolve(base64);
             } else {
                 promise.reject("IMAGE_FAIL", morfinAuth.GetErrorMessage(ret));
             }
         } catch (Exception e) {
-            promise.reject("ERR", e);
+            promise.reject("ERR", e.getMessage());
         }
     }
 

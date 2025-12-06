@@ -1,27 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, View, ActivityIndicator } from 'react-native';
-import styles from './styles.js';
-import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
-import { Colors, LightThemeColors } from '../../config/Colors.js';
-import Header from '../../components/header/index.js';
-import { scale } from 'react-native-size-matters';
-import { CustomText } from '../../components/global/CustomComponents.js';
-import Button from '../../components/buttons/Button/index.js';
-import { getEmployeeInfo } from '../../api/auth.js';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  View,
+} from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { scale } from 'react-native-size-matters';
+import { useSelector } from 'react-redux';
+import { getEmployeeInfo } from '../../api/auth.js';
+import CustomDropdown from '../../components/CustomDropdown/index.js';
+import AddFingerPrintBottomSheet from '../../components/bottomSheet/AddFingerPrintBottomSheet';
+import Button from '../../components/buttons/Button/index.js';
+import { CustomText } from '../../components/global/CustomComponents.js';
+import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
+import Header from '../../components/header/index.js';
+import { Colors, LightThemeColors } from '../../config/Colors.js';
+import styles from './styles.js';
 
 const EmployeeInfoScreen = ({ navigation, route }) => {
-  const { item } = route.params;
+  const { FirngerPrint, MyEmployee, item } = route.params;
+
+  // console.log('itemxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', item);
+
+  const bottomSheetRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [employee, setEmployee] = useState({});
+  const [selectHand, setSelectHand] = useState('Right Hand');
+  const [selectFinger, setSelectFinger] = useState('Thumb');
   const user = useSelector(state => state.users.users);
+  const [reset, setReset] = useState(false);
   const token = user?.access_token;
-
-  const formatShiftTiming = (shiftObj) => {
+  const Hand = ['Right Hand', 'Left Hand'];
+  const Finger = [
+    'Thumb',
+    'Index Finger',
+    'Middle Finger',
+    'Ring Finger',
+    'Little Finger',
+  ];
+  const formatShiftTiming = shiftObj => {
     if (!shiftObj) return '';
 
-    const formatTime = (time) => {
+    const formatTime = time => {
       const [hour, minute] = time.split(':');
       return `${hour}:${minute}`; // remove seconds
     };
@@ -32,10 +54,14 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
     return `${shiftObj.shift_name} • ${start} - ${end}`;
   };
 
-  console.log('user222222222', item)
+  console.log('user222222222', item);
   useEffect(() => {
-    getEmployee();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      getEmployee();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const getEmployee = async () => {
     setLoading(true);
@@ -54,7 +80,8 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
     } catch (error) {
       showMessage({
         message: 'Error',
-        description: error?.message || 'Something went wrong. Please try again.',
+        description:
+          error?.message || 'Something went wrong. Please try again.',
         type: 'danger',
       });
     } finally {
@@ -62,10 +89,14 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
     }
   };
 
+  console.log('employxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', employee);
+
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    return `${String(date.getDate()).padStart(2, '0')}-${String(
+      date.getMonth() + 1,
+    ).padStart(2, '0')}-${date.getFullYear()}`;
   }
 
   return (
@@ -84,14 +115,29 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
 
         {/* Loader */}
         {loading ? (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={LightThemeColors.titleColor} />
-            <CustomText style={{ marginTop: scale(10), color: LightThemeColors.textLowContrast }}>
+          <View
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <ActivityIndicator
+              size="large"
+              color={LightThemeColors.titleColor}
+            />
+            <CustomText
+              style={{
+                marginTop: scale(10),
+                color: LightThemeColors.textLowContrast,
+              }}
+            >
               Loading Employee Info...
             </CustomText>
           </View>
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView
+            bounces={false}
+            overScrollMode="never"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: scale(20) }}
+          >
             <View style={styles.profileWrapper}>
               <View style={styles.imageWrapper}>
                 <Image
@@ -104,10 +150,20 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                 />
               </View>
               <View>
-                <CustomText style={[styles.name, { color: LightThemeColors.textHighContrast }]}>
+                <CustomText
+                  style={[
+                    styles.name,
+                    { color: LightThemeColors.textHighContrast },
+                  ]}
+                >
                   {employee?.name}
                 </CustomText>
-                <CustomText style={[styles.id, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.id,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   Employee Id : {employee?.employee_code}
                 </CustomText>
               </View>
@@ -115,100 +171,305 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
 
             {/* Employee Info Rows */}
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Salary :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Salary :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                {employee?.salary_type == 'daily' ? <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                {employee?.salary_daily} ₹ /{employee?.salary_type} 
-                </CustomText> :
-                  <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
-                    {employee?.salary_monthly} ₹ /{employee?.salary_type} 
-                  </CustomText>}
+                {employee?.salary_type == 'daily' ? (
+                  <CustomText
+                    style={[
+                      styles.value,
+                      { color: LightThemeColors.textLowContrast },
+                    ]}
+                  >
+                    {employee?.salary_daily} ₹ /{employee?.salary_type}
+                  </CustomText>
+                ) : (
+                  <CustomText
+                    style={[
+                      styles.value,
+                      { color: LightThemeColors.textLowContrast },
+                    ]}
+                  >
+                    {employee?.salary_monthly} ₹ /{employee?.salary_type}
+                  </CustomText>
+                )}
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Machine :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Machine :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {employee?.machine?.name}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Work :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Work :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {employee?.employee_work_title}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Shift time :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Shift time :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {formatShiftTiming(employee?.shift)}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Joining Date :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Joining Date :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {formatDate(employee?.joining_date)}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Gender :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Gender :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {employee?.gender}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>DOB :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                DOB :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {formatDate(employee?.dob)}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Contact No. :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Contact No. :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   +91 {employee?.mobile}
                 </CustomText>
               </View>
             </View>
 
             <View style={styles.row}>
-              <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Employee type :</CustomText>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Employee type :
+              </CustomText>
               <View style={styles.valueWrapper}>
-                <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast },
+                  ]}
+                >
                   {employee?.employee_type}
                 </CustomText>
               </View>
             </View>
 
-            <View style={styles.buttonWrapper}>
-              <Button
-                label={'Attendance List'}
-                labelColor={Colors.white}
-                backgroundColor={LightThemeColors.titleColor}
-                onPress={() => { navigation.navigate('AttendanceScreen') }}
-              />
-            </View>
+            {employee?.fingerprint_template_data && (
+              <View style={styles.row}>
+                <CustomText
+                  style={[
+                    styles.title,
+                    { color: LightThemeColors.textHighContrast },
+                  ]}
+                >
+                  FingerPrint type :
+                </CustomText>
+                <View style={styles.valueWrapper}>
+                  <CustomText
+                    style={[
+                      styles.value,
+                      {
+                        color: LightThemeColors.textLowContrast,
+                        textDecorationLine: 'none',
+                      },
+                    ]}
+                  >
+                    {`${employee?.fingerprint_template_data?.handType}, ${employee?.fingerprint_template_data?.fingerType}`}
+                  </CustomText>
+                </View>
+              </View>
+            )}
+
+            {!FirngerPrint && (
+              <View style={styles.buttonWrapper}>
+                <Button
+                  label={'Attendance List'}
+                  labelColor={Colors.white}
+                  backgroundColor={LightThemeColors.titleColor}
+                  onPress={() => {
+                    if (employee?.fingerprint_template_data) {
+                      navigation.navigate('EmployeeAttendanceView');
+                    } else {
+                      Alert.alert(
+                        'No Fingerprint Found',
+                        'Please add your fingerprint first, then you can view your attendance list.',
+                      );
+                    }
+                  }}
+                />
+              </View>
+            )}
+
+            {FirngerPrint && (
+              <>
+                <View style={styles.selectDropdown}>
+                  <CustomDropdown
+                    label="Select Hand"
+                    value={selectHand}
+                    placeholder="Select Hand"
+                    options={Hand}
+                    onSelect={value => setSelectHand(value)}
+                  />
+                </View>
+
+                <View style={styles.selectDropdown}>
+                  <CustomDropdown
+                    label="Select Finger"
+                    value={selectFinger}
+                    placeholder="Select Hand"
+                    options={Finger}
+                    onSelect={value => setSelectFinger(value)}
+                  />
+                </View>
+
+                <View style={styles.buttonWrapper}>
+                  <Button
+                    label={'Add FingerPrint'}
+                    labelColor={Colors.white}
+                    backgroundColor={LightThemeColors.titleColor}
+                    onPress={() => {
+                      // setReset(true)
+                      bottomSheetRef.current?.expand();
+                    }}
+                  />
+                </View>
+              </>
+            )}
           </ScrollView>
         )}
       </View>
+      <AddFingerPrintBottomSheet
+        sheetRef={bottomSheetRef}
+        userId={item?.id}
+        // reset={reset}
+        HandType={selectHand}
+        FingerType={selectFinger}
+        token={token}
+        onCancel={() => {
+          bottomSheetRef.current?.close();
+          // setReset(false);
+        }}
+        onUpdatedFinger={() => {
+          bottomSheetRef.current?.close();
+          navigation.goBack();
+        }}
+      />
     </CustomSafeAreaView>
   );
 };

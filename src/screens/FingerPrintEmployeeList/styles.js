@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native';
 import { scale } from 'react-native-size-matters';
+import { Colors } from '../../config/Colors';
 import {
   SCREEN_WIDTH,
   STANDARD_FLEX,
   STANDARD_SPACING,
 } from '../../config/Constants';
-import { Colors } from '../../config/Colors';
 
 // Exporting style
 export default StyleSheet.create({

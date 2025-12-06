@@ -1,37 +1,68 @@
+import { StyleSheet } from 'react-native';
+import { scale } from 'react-native-size-matters';
+import {
+  FONT_SIZE_SM,
+  FONT_SIZE_XS,
+  POPPINS_MEDIUM,
+  POPPINS_REGULAR,
+  STANDARD_COUPON_CARD_BRAND_IMAGE_WRAPPER_SIZE,
+  STANDARD_FLEX,
+  STANDARD_OVERALL_RATING_CARD_HEIGHT,
+  STANDARD_SPACING
+} from '../../../config/Constants';
 
-import { StyleSheet } from "react-native";
-import { FONT_SIZE_SM, FONT_SIZE_XS, FONT_SIZE_XXS, POPPINS_MEDIUM, POPPINS_REGULAR, SCREEN_WIDTH, STANDARD_BORDER_RADIUS } from "../../../config/Constants";
-import { scale } from "react-native-size-matters";
-
+// Creating stylesheets
 export default StyleSheet.create({
   card: {
-    width: SCREEN_WIDTH * 0.4,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    minHeight: scale(110),
-    padding: scale(12),
-    borderRadius: STANDARD_BORDER_RADIUS * 2,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    justifyContent: 'space-between',
-    rowGap: scale(20)
+    position: 'relative',
+    minHeight: STANDARD_OVERALL_RATING_CARD_HEIGHT,
+    borderRadius: STANDARD_OVERALL_RATING_CARD_HEIGHT * 0.1,
+    shadowColor: '#6c757d',
+    shadowOffset: {width: scale(0), height: scale(7.5)},
+    shadowOpacity: 0.15,
+    shadowRadius: scale(5),
+    elevation: scale(7.5),
   },
-  icon: {
-    width: scale(40),
-    height: scale(40),
+  imageWrapper: {
+    height: STANDARD_OVERALL_RATING_CARD_HEIGHT * 0.5,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
-  textView: {
+  brandImageWrapper: {
+    height: scale(80),
+    aspectRatio: 1,
+    padding: STANDARD_SPACING,
+    overflow: 'hidden',
+    borderRadius: STANDARD_COUPON_CARD_BRAND_IMAGE_WRAPPER_SIZE * 0.5,
+  },
+  brandImage: {
+    width: null,
+    height: null,
+    flex: STANDARD_FLEX,
+    resizeMode: 'cover',
+  },
+  detailsBackgroundImageWrapper: {
+    height: STANDARD_OVERALL_RATING_CARD_HEIGHT * 0.5,
+    borderBottomLeftRadius: STANDARD_OVERALL_RATING_CARD_HEIGHT * 0.1,
+    borderBottomRightRadius: STANDARD_OVERALL_RATING_CARD_HEIGHT * 0.1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  detailsWrapper: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    left: scale(10),
+    top: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: FONT_SIZE_XS,
-    fontFamily: POPPINS_MEDIUM
-
+    fontFamily: POPPINS_MEDIUM,
+    fontSize: FONT_SIZE_SM,
   },
-  subtitle: {
-    fontSize: FONT_SIZE_XXS,
-    fontFamily: POPPINS_REGULAR
+  validUpto: {
+    fontFamily: POPPINS_REGULAR,
+    fontSize: FONT_SIZE_XS,
   },
 });

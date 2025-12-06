@@ -1,137 +1,136 @@
-import React, { useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import styles from './styles.js';
+import { scale } from 'react-native-size-matters';
+import { useSelector } from 'react-redux';
+import { HomeCount } from '../../api/auth.js';
+import { Indicators } from '../../components/apploader';
+import MyExportBottomSheet from '../../components/bottomSheet/MyExportBottomSheet/index.js';
+import AccessCard from '../../components/cards/AccessCard/index.js';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
-import { Colors, LightThemeColors } from '../../config/Colors.js';
 import Header from '../../components/header/index.js';
-import AccessCard from '../../components/cards/AccessCard/index.js';
+import { Colors, LightThemeColors } from '../../config/Colors.js';
 import { SCREEN_WIDTH } from '../../config/Constants.js';
-import { scale } from 'react-native-size-matters';
-import MyExportBottomSheet from '../../components/bottomSheet/MyExportBottomSheet/index.js';
-import { useSelector } from 'react-redux';
-
-const data = [
-  {
-    id: 1,
-    title: 'My Employee',
-    subtitle: 'Total Employees',
-    icon: require('../../assets/images/Attendance.png'),
-    onPress: 'MyEmployeeScreen',
-    subtitleValue: 100,
-    param: " "
-
-  },
-  {
-    id: 2,
-    title: 'Add Attendance',
-    subtitle: 'Today',
-    subtitleValue: '',
-    icon: require('../../assets/images/shift.png'),
-    onPress: 'MyMachineScreen',
-    param: " "
-
-
-  },
-  {
-    id: 3,
-    title: 'My Machine',
-    subtitle: 'Total Machines',
-    subtitleValue: 10,
-    icon: require('../../assets/images/machine.png'),
-    onPress: 'MyMachineScreen',
-    param: "MyMachine"
-  },
-  {
-    id: 4,
-    title: 'My Export',
-    subtitle: 'Date',
-    subtitleValue: '27-10-2025',
-    icon: require('../../assets/images/export.png'),
-    onPress: 'MyExport',
-    param: " "
-
-  },
-  {
-    id: 5,
-    title: 'Report',
-    subtitle: 'Total Contractors',
-    subtitleValue: 20,
-    icon: require('../../assets/images/document.png'),
-    param: " ",
-    onPress: 'ContractorListScreen',
-
-  },
-  {
-    id: 6,
-    title: 'Register Employee',
-    subtitle: 'Total Contractors',
-    subtitleValue: 20,
-    icon: require('../../assets/images/add.png'),
-    param: " ",
-    onPress: 'RegisterEmployeeScreen',
-
-  },
-];
+import { getHomeData } from '../../data/Homedata.js';
+import { FlatGrid } from 'react-native-super-grid';
+import styles from './styles.js';
 
 const HomeScreen = ({ navigation }) => {
-  const user = useSelector(state => state.users.users?.user);
-  console.log('Home', user)
+  const user = useSelector(state => state.users.users);
+  console.log('xxxxxxxxxxxxxxxxx', user);
+
+  const token = user?.access_token;
+  const userdata = user?.user;
   const bottomSheetRef = useRef(null);
+  const [countData, setCountData] = useState({
+    employees_count: 0,
+    machines_count: 0,
+    contractor_count: 0,
+    attendance_count: 0,
+    current_date: '',
+    fingerprint_false_count: 0,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const HomeCountApi = useCallback(() => {
+    setLoading(true);
+
+    HomeCount(token)
+      .then(res => {
+        console.log('Home Count Response', res);
+        if (res?.status && res?.data) {
+          setCountData(res.data);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        setLoading(false);
+        console.log('Home Count Error', err);
+        showMessage({
+          message: 'Error',
+          description: err?.message || 'Something went wrong',
+          type: 'danger',
+        });
+      });
+  }, [token]); // Empty dependency array ensures the effect runs once on mount
+
+  useFocusEffect(
+    React.useCallback(() => {
+      HomeCountApi();
+    }, [HomeCountApi]), // Make sure to include HomeCountApi in dependencies
+  );
+
+  const homeData = getHomeData(countData);
+
+  const ListHeader = () => {
+    return (
+      <View style={styles.sectionTitleWrapper}>
+        <CustomText
+          style={[
+            styles.sectionTitle,
+            { color: LightThemeColors.textHighContrast },
+          ]}
+        >
+          Quick Access
+        </CustomText>
+      </View>
+    );
+  };
 
   return (
     <CustomSafeAreaView
       statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+      barStyle="light-content"
+      style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
     >
-      <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
-        <Header
-          //  back={true}
-          // title={'Attandance'}
-          headerBg={LightThemeColors.titleColor}
-          iconColor={Colors.white}
-          leftComponent
-          textColor={Colors.white}
-          profileImage={user?.photo}
-          name={user?.name}
-          employeeId={user?.id}
-          imageOnPress={() => { navigation.navigate('ProfileScreen') }}
-        />
-        <View style={styles.titleView}>
-          <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Quick Access</CustomText>
-        </View>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingVertical: scale(16),
-            paddingHorizontal: SCREEN_WIDTH * 0.03,
-          }}
-        >
-          {/* 2 cards per row */}
-          <View style={styles.cardContainer}>
-            {data.map(item => (
-              <AccessCard
-                key={item.id}
-                title={item.title}
-                subtitle={item.subtitle}
-                icon={item.icon}
-                subtitleValue={item?.subtitleValue}
-                onPress={() => {
-                  item?.onPress == 'MyExport' ?
-                    bottomSheetRef.current?.expand()
-                    : navigation.navigate(item?.onPress, { param: item?.param }
-                    )
-                }}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+      <Header
+        headerBg={LightThemeColors.titleColor}
+        iconColor={Colors.white}
+        leftComponent
+        textColor={Colors.white}
+        profileImage={userdata?.photo}
+        name={userdata?.name}
+        employeeId={userdata?.employee_code}
+        imageOnPress={() => {
+          navigation.navigate('ProfileScreen');
+        }}
+      />
+      {/* Flatgrid */}
+      <FlatGrid
+        itemDimension={scale(130)}
+        data={homeData}
+        style={styles.flatGrid}
+        spacing={scale(15)}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={ListHeader}
+        renderItem={({ item }) => (
+          <AccessCard
+            key={item?.id}
+            title={item.title}
+            subtitle={item.subtitle}
+            categoryImage={item.icon}
+            defaultSource={item.defaultSource}
+            subtitleValue={item?.subtitleValue}
+            onPress={() => {
+              if (item?.onPress == 'MyExport') {
+                bottomSheetRef.current?.expand();
+              } else {
+                navigation.navigate(item?.onPress);
+              }
+            }}
+          />
+        )}
+      />
       <MyExportBottomSheet
         sheetRef={bottomSheetRef}
-        onCancel={() => { bottomSheetRef.current?.close() }}
+        onCancel={() => {
+          bottomSheetRef.current?.close();
+        }}
+        token={token}
       />
+      {loading && <Indicators />}
     </CustomSafeAreaView>
   );
 };

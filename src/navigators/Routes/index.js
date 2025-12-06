@@ -1,35 +1,38 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-import WelcomeScreen from '../../screens/WelcomeScreen/index.js';
-import HomeScreen from '../../screens/HomeScreen/index.js'
-import AuthStack from '../../navigators/stacks/AuthStack/index.js'
-import EmployeeStack from '../stacks/EmployeeStack/index.js'
-import AddAttendanceStack from '../stacks/AddAttendanceStack/index.js'
-import ContractorListScreen from '../../screens/ContractorListScreen/index.js'
-import ProfileScreen from '../../screens/ProfileScreen/index.js'
-import EditProfileScreen from '../../screens/EditProfileScreen/index.js'
-import ChangePassword from '../../screens/ChangePassword/index.js'
-import MyMachineScreen from '../../screens/MyMachineScreen/index.js';
-import EmployeeListScreen from '../../screens/EmployeeListScreen/index.js';
-import MyEmployeeScreen from '../../screens/MyEmployeeScreen/index.js';
+import AttendanceEmployeeList from '../../screens/AttendanceEmployeeList';
+import ChangePassword from '../../screens/ChangePassword/index.js';
+import ContractorListScreen from '../../screens/ContractorListScreen/index.js';
+import EditProfileScreen from '../../screens/EditProfileScreen/index.js';
+import EmployeeAttendanceView from '../../screens/EmployeeAttendanceView';
 import EmployeeInfoScreen from '../../screens/EmployeeInfoScreen/index.js';
-import AttendanceScreen from '../../screens/AttendanceScreen/index.js';
-import MachineEmployeeScreen from '../../screens/MachineEmployeeScreen/index.js'
+import FingerPrintEmployeeList from '../../screens/FingerPrintEmployeeList';
+import HomeScreen from '../../screens/HomeScreen/index.js';
 import LogInScreen from '../../screens/LogInScreen/index.js';
+import MachineEmployeeList from '../../screens/MachineEmployeeList';
+import MarkAttendance from '../../screens/MarkAttendance';
+import MyEmployee from '../../screens/MyEmployee';
+import MyMachine from '../../screens/MyMachine';
+import ProfileScreen from '../../screens/ProfileScreen/index.js';
 import RegisterEmployeeScreen from '../../screens/RegisterEmployeeScreen/index.js';
+import WelcomeScreen from '../../screens/WelcomeScreen/index.js';
 
 import { useSelector } from 'react-redux';
 const Stack = createNativeStackNavigator();
 
 const Routes = () => {
   const user = useSelector(state => state?.users);
-  const initial = user?.users?.access_token ? 'HomeScreen' : user?.welcomeFlag == false ? 'WelcomeScreen' : 'LogInScreen'
+  const initial = user?.users?.access_token
+    ? 'HomeScreen'
+    : user?.welcomeFlag == false
+    ? 'WelcomeScreen'
+    : 'LogInScreen';
   return (
     <Stack.Navigator initialRouteName={initial}>
       <Stack.Screen
         name="WelcomeScreen"
         component={WelcomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       {/* <Stack.Screen
         name="AuthStack"
@@ -39,12 +42,12 @@ const Routes = () => {
       <Stack.Screen
         name="LogInScreen"
         component={LogInScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="HomeScreen"
         component={HomeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       {/* <Stack.Screen
         name="EmployeeStack"
@@ -52,69 +55,76 @@ const Routes = () => {
         options={{ headerShown: false }}
       /> */}
       <Stack.Screen
-        name="MyEmployeeScreen"
-        component={MyEmployeeScreen}
-        options={{ headerShown: false }}
+        name="MyEmployee"
+        component={MyEmployee}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="EmployeeInfoScreen"
         component={EmployeeInfoScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
-        name="AttendanceScreen"
-        component={AttendanceScreen}
-        options={{ headerShown: false }}
+        name="EmployeeAttendanceView"
+        component={EmployeeAttendanceView}
+        options={{ headerShown: false, animation: 'none' }}
       />
       {/* <Stack.Screen
         name="AddAttendanceStack"
         component={AddAttendanceStack}
         options={{ headerShown: false }}
       /> */}
+
       <Stack.Screen
-        name="MyMachineScreen"
-        component={MyMachineScreen}
-        options={{ headerShown: false }}
+        name="MarkAttendance"
+        component={MarkAttendance}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
-        name="EmployeeListScreen"
-        component={EmployeeListScreen}
-        options={{ headerShown: false }}
+        name="MyMachine"
+        component={MyMachine}
+        options={{ headerShown: false, animation: 'none' }}
+      />
+      <Stack.Screen
+        name="AttendanceEmployeeList"
+        component={AttendanceEmployeeList}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="ContractorListScreen"
         component={ContractorListScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="ProfileScreen"
         component={ProfileScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="EditProfileScreen"
         component={EditProfileScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
       <Stack.Screen
         name="ChangePassword"
         component={ChangePassword}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
-       <Stack.Screen
-        name="MachineEmployeeScreen"
-        component={MachineEmployeeScreen}
-        options={{ headerShown: false }}
+      <Stack.Screen
+        name="MachineEmployeeList"
+        component={MachineEmployeeList}
+        options={{ headerShown: false, animation: 'none' }}
       />
-       <Stack.Screen
+      <Stack.Screen
         name="RegisterEmployeeScreen"
         component={RegisterEmployeeScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, animation: 'none' }}
       />
-
-
-
-
+      <Stack.Screen
+        name="FingerPrintEmployeeList"
+        component={FingerPrintEmployeeList}
+        options={{ headerShown: false, animation: 'none' }}
+      />
     </Stack.Navigator>
   );
 };

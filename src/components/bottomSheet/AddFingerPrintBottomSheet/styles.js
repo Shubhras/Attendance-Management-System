@@ -9,6 +9,7 @@ import {
   SCREEN_WIDTH,
 } from '../../../config/Constants';
 import { Colors, LightThemeColors } from '../../../config/Colors';
+import { Color } from 'react-native/types_generated/Libraries/Animated/AnimatedExports';
 
 // Exporting style
 export default StyleSheet.create({
@@ -16,7 +17,7 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    rowGap: scale(15),
+    rowGap: scale(25),
   },
   imageContainer: {
     position: 'relative',
@@ -38,13 +39,9 @@ export default StyleSheet.create({
   title: {
     fontFamily: POPPINS_MEDIUM,
     fontSize: FONT_SIZE_MD,
-     marginBottom: scale(5),
-  },
-  fingerTitle: {
-    fontFamily: POPPINS_MEDIUM,
-    fontSize: FONT_SIZE_MD,
   },
   titleSuccess: {
+    textAlign: 'center',
     fontFamily: POPPINS_MEDIUM,
     fontSize: FONT_SIZE_MD,
     marginTop: scale(25),

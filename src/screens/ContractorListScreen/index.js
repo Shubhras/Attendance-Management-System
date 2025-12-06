@@ -5,7 +5,7 @@ import {
   FlatList,
   PermissionsAndroid,
   Platform,
-  View
+  View,
 } from 'react-native';
 import styles from './styles.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
@@ -21,7 +21,7 @@ import { showMessage } from 'react-native-flash-message';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import RNFetchBlob from 'rn-fetch-blob';
 import { API_URL } from '../../../env.js';
-
+import EmptyCart from '../../components/alerts/EmptyCart/index.js';
 
 // -----------------------------------------------
 //  PERMISSION
@@ -41,7 +41,6 @@ const requestStoragePermission = async () => {
       granted = Object.values(permissions).some(
         p => p === PermissionsAndroid.RESULTS.GRANTED,
       );
-
     } else {
       const res = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
@@ -55,8 +54,6 @@ const requestStoragePermission = async () => {
     return false;
   }
 };
-
-
 
 // -----------------------------------------------
 //  DOWNLOAD FUNCTION (Correct + Token supported)
@@ -92,29 +89,23 @@ const downloadFile = async (url, token) => {
       },
     });
 
-    const res = await RNFetchBlob
-      .config(configOptions)
-      .fetch('GET', url, {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/pdf',
-      });
+    const res = await RNFetchBlob.config(configOptions).fetch('GET', url, {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/pdf',
+    });
 
     return res;
-
   } catch (error) {
-    console.log("Download Error:", error);
-    Alert.alert("Download Failed", error.message);
+    console.log('Download Error:', error);
+    Alert.alert('Download Failed', error.message);
     return null;
   }
 };
-
-
 
 // -----------------------------------------------
 //  MAIN SCREEN
 // -----------------------------------------------
 const ContractorListScreen = ({ navigation }) => {
-
   const [loading, setLoading] = useState(false);
   const [contractors, setContractors] = useState([]);
   const [page, setPage] = useState(1);
@@ -124,11 +115,9 @@ const ContractorListScreen = ({ navigation }) => {
   const user = useSelector(state => state.users.users);
   const token = user?.access_token;
 
-
   useEffect(() => {
     getContractors(page, search, true);
   }, []);
-
 
   // -----------------------------------------------
   //  API: Get Contractors List
@@ -139,6 +128,8 @@ const ContractorListScreen = ({ navigation }) => {
 
     try {
       const response = await getContractorsApi(token, searchText, pageNumber);
+      console.log('res', response);
+
       if (response?.status === true) {
         const newData = response?.data || [];
 
@@ -150,19 +141,18 @@ const ContractorListScreen = ({ navigation }) => {
 
         setHasMore(newData.length > 0);
       }
-
     } catch (error) {
-      showMessage({
-        message: 'Error',
-        description: 'Something went wrong. Please try again.',
-        type: 'danger',
-      });
-
+      // showMessage({
+      //   message: 'Error',
+      //   description: 'Something went wrong. Please try again.',
+      //   type: 'danger',
+      // });
+      console.log('error', error);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {
@@ -172,49 +162,40 @@ const ContractorListScreen = ({ navigation }) => {
     }
   };
 
-
-  const handleSearch = useCallback((text) => {
+  const handleSearch = useCallback(text => {
     setSearch(text);
     setPage(1);
     getContractors(1, text, true);
   }, []);
 
-
   // -----------------------------------------------
   //  DOWNLOAD HANDLER
   // -----------------------------------------------
-  const handeleDownloadReport = async (PDF_URL) => {
+  const handeleDownloadReport = async PDF_URL => {
     if (!PDF_URL) {
-      Alert.alert("Error", "Invalid download URL");
+      Alert.alert('Error', 'Invalid download URL');
       return;
     }
 
-    if (Platform.OS === "android") {
+    if (Platform.OS === 'android') {
       const ok = await requestStoragePermission();
       if (!ok) return;
 
       const res = await downloadFile(PDF_URL, token);
-      if (res) Alert.alert("Download Complete", "Saved in Downloads.");
-    }
-
-    else {
+      if (res) Alert.alert('Download Complete', 'Saved in Downloads.');
+    } else {
       const res = await downloadFile(PDF_URL, token);
       if (res) {
-        Alert.alert(
-          "Download Complete",
-          `Saved in Documents`,
-          [
-            { text: "OK" },
-            {
-              text: "Open PDF",
-              onPress: () => RNFetchBlob.ios.previewDocument(res.path())
-            }
-          ]
-        );
+        Alert.alert('Download Complete', `Saved in Documents`, [
+          { text: 'OK' },
+          {
+            text: 'Open PDF',
+            onPress: () => RNFetchBlob.ios.previewDocument(res.path()),
+          },
+        ]);
       }
     }
   };
-
 
   // -----------------------------------------------
   //  RENDER ITEM
@@ -231,13 +212,15 @@ const ContractorListScreen = ({ navigation }) => {
     />
   );
 
+  const EmptyList = () => {
+    return !loading && <EmptyCart message="No Contractors found" />;
+  };
 
   return (
     <CustomSafeAreaView
-    statusBarBackgroundColor={LightThemeColors.titleColor}
-    barStyle="white"
-  >
-
+      statusBarBackgroundColor={LightThemeColors.titleColor}
+      barStyle="white"
+    >
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -265,14 +248,17 @@ const ContractorListScreen = ({ navigation }) => {
           />
         </View>
 
-
         <FlatList
           style={styles.flateList}
           data={contractors}
           keyExtractor={(item, index) => index.toString()}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.contentContainerStyle}
+          contentContainerStyle={
+            contractors.length === 0
+              ? styles.contentContainerStyleEmpty
+              : styles.contentContainerStyle
+          }
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
@@ -284,23 +270,23 @@ const ContractorListScreen = ({ navigation }) => {
               />
             )
           }
-          ListEmptyComponent={
-            !loading && (
-              <View style={{ alignItems: 'center', marginTop: scale(180) }}>
-                <Icons
-                  name="people-outline"
-                  iconType="Ionicons"
-                  size={scale(60)}
-                  color={LightThemeColors.titleColor}
-                />
-                <CustomText style={[styles.text, { color: LightThemeColors.textHighContrast }]}>
-                  No Contractors found
-                </CustomText>
-              </View>
-            )
-          }
+          ListEmptyComponent={EmptyList}
+          // ListEmptyComponent={
+          //   !loading && (
+          //     <View style={{ alignItems: 'center', marginTop: scale(180) }}>
+          //       <Icons
+          //         name="people-outline"
+          //         iconType="Ionicons"
+          //         size={scale(60)}
+          //         color={LightThemeColors.titleColor}
+          //       />
+          //       <CustomText style={[styles.text, { color: LightThemeColors.textHighContrast }]}>
+          //         No Contractors found
+          //       </CustomText>
+          //     </View>
+          //   )
+          // }
         />
-
       </View>
     </CustomSafeAreaView>
   );

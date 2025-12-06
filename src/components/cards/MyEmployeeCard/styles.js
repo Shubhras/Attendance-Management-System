@@ -42,7 +42,8 @@ export default StyleSheet.create({
   title: {
     fontSize: FONT_SIZE_XS,
     fontFamily: POPPINS_SEMIBOLD,
-    width: SCREEN_WIDTH * 0.5
+    width: SCREEN_WIDTH * 0.5,
+    textTransform: 'capitalize',
   },
   subtitle: {
     fontSize: FONT_SIZE_XXS,

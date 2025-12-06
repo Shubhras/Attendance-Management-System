@@ -4,6 +4,8 @@ import {
   FONT_SIZE_MD,
   FONT_SIZE_SM,
   FONT_SIZE_XS,
+  POPPINS_MEDIUM,
+  POPPINS_SEMIBOLD,
   SCREEN_WIDTH,
   STANDARD_BORDER_RADIUS,
  } from '../../config/Constants';
@@ -15,6 +17,7 @@ export default StyleSheet.create({
   // dropdown
   dropdownLabel: {
     fontSize: FONT_SIZE_SM,
+    fontFamily: POPPINS_SEMIBOLD,
     marginBottom: scale(6),
     color: Colors.textHighContrast,
   },
@@ -31,6 +34,7 @@ export default StyleSheet.create({
   },
   dropdownText: {
     fontSize: FONT_SIZE_SM,
+    fontFamily: POPPINS_MEDIUM,
     color: Colors.textHighContrast,
   },
 

@@ -1,42 +1,29 @@
-import React, { FC, ReactNode, useCallback } from 'react';
-import { StatusBar, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { FC, ReactNode } from 'react';
+import { StatusBar, StyleSheet, View, ViewStyle, StatusBarStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { Colors } from '../../config/Colors';
 
 interface CustomSafeAreaViewProps {
   statusBarBackgroundColor?: string;
-  barStyle?: 'default' | 'light-content' | 'dark-content';
+  barStyle?: StatusBarStyle;
   children: ReactNode;
   style?: ViewStyle;
 }
 
-/**
- * CustomSafeAreaView
- * - Handles SafeArea and StatusBar behavior consistently across screens
- * - Optional props for backgroundColor, barStyle, and container style
- */
 const CustomSafeAreaView: FC<CustomSafeAreaViewProps> = ({
-  statusBarBackgroundColor = '#ffffff',
-  barStyle = 'dark-content',
+  statusBarBackgroundColor ,
+  barStyle,
   children,
   style,
 }) => {
-  // Update StatusBar when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setBackgroundColor(statusBarBackgroundColor, true);
-      StatusBar.setBarStyle(barStyle, true);
-    }, [statusBarBackgroundColor, barStyle])
-  );
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: statusBarBackgroundColor }, style]}>
+    <SafeAreaView style={[styles.container, style]}>
       <StatusBar
-        backgroundColor={statusBarBackgroundColor}
-        barStyle={barStyle}
+        backgroundColor={statusBarBackgroundColor ? statusBarBackgroundColor : Colors.white}
+        barStyle={barStyle || 'light-content'}
       />
-      <View style={styles.inner}>{children}</View>
+      <View style={[styles.container, style]}>{children}</View>
     </SafeAreaView>
   );
 };
@@ -45,10 +32,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  inner: {
-    flex: 1,
-  },
 });
 
 export default CustomSafeAreaView;
- 

@@ -1,6 +1,8 @@
 import { StyleSheet } from 'react-native';
 import { scale } from 'react-native-size-matters';
 import {
+  FONT_SIZE_MD,
+  POPPINS_SEMIBOLD,
   SCREEN_WIDTH,
   STANDARD_FLEX,
   STANDARD_SPACING,
@@ -32,5 +34,9 @@ export default StyleSheet.create({
   },
   flateList: {
     marginTop: STANDARD_SPACING * 4,
+  },
+  text: {
+    fontFamily: POPPINS_SEMIBOLD,
+    fontSize: FONT_SIZE_MD,
   },
 });

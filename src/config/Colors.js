@@ -78,8 +78,9 @@ const Colors = {
   lightBlackIconBackground: '#3F3D3D',
   lightgary: '#969392',
   inactiveStar: '#CCCCCC', 
-  pomegranate:'#D61313'
-
+  pomegranate:'#D61313',
+  textHighContrast: '#30334F',
+  textLowContrast: '#ADB4D2',
 };
 
 // Exporting colors

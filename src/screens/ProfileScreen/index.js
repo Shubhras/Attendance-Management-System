@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { View, Image, ScrollView, Alert } from 'react-native';
 import styles from './styles.js';
@@ -12,109 +10,155 @@ import Button from '../../components/buttons/Button/index.js';
 import { logoutUser } from '../../redux/slices/SessionUser.js';
 import { useDispatch, useSelector } from 'react-redux';
 
-
+const Local_Image =
+  'https://img.freepik.com/premium-vector/user-profile-people-icon-isolated-white-background_322958-4540.jpg?semt=ais_hybrid&w=740&q=80';
 
 const ProfileScreen = ({ navigation }) => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    const user = useSelector(state => state.users.users?.user);
+  const user = useSelector(state => state.users.users?.user);
 
-    console.log('useriiiiiiiiiii',user)
-    const handleLogout = () => {
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Logout',
-                    onPress: () => {
-                        dispatch(logoutUser());
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'LogInScreen' }],
-                        });
-                    },
-                },
-            ],
-            { cancelable: true }
-        );
-    };
-
-    return (
-        <CustomSafeAreaView statusBarBackgroundColor="transparent" barStyle="dark-content">
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
-                <Header
-                    back={true}
-                    title={'Profile'}
-                    // headerBg={LightThemeColors.titleColor}
-                    iconColor={Colors.black}
-                    style={{ height: scale(50) }}
-                />
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoWrapper}>
-                        <Image style={styles.logoImage} source={{ uri: 'https://surl.li/nezovl' }} />
-                    </View>
-                </View>
-                <View style={styles.row}>
-                    <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>First name : </CustomText>
-                    <View style={styles.valueWrapper}>
-                        <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>{user?.name}</CustomText>
-                    </View>
-                </View>
-                <View style={styles.row}>
-                    <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Last name : </CustomText>
-                    <View style={styles.valueWrapper}>
-                        <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>Rodriguez</CustomText>
-                    </View>
-                </View>
-                <View style={styles.row}>
-                    <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Employee Id : </CustomText>
-                    <View style={styles.valueWrapper}>
-                        <CustomText style={[styles.value, { color: LightThemeColors.textLowContrast }]}>{user?.id}</CustomText>
-                    </View>
-                </View>
-                <View style={styles.row}>
-                    <CustomText style={[styles.title, { color: LightThemeColors.textHighContrast }]}>Email : </CustomText>
-                    <View style={styles.valueWrapper}>
-                        <CustomText style={[styles.emailText, { color: LightThemeColors.textLowContrast }]}>{user?.email}</CustomText>
-                    </View>
-                </View>
-
-                {/* <View style={styles.buttonWrapper}>
-                    <Button
-                        label="Edit Profile"
-                        labelColor={Colors.white}
-                        backgroundColor={LightThemeColors.titleColor}
-                        onPress={() => { navigation.navigate('EditProfileScreen') }}
-                    />
-                </View>
-
-                <View style={styles.buttonWrapper}>
-                    <Button
-                        label="Change Password"
-                        labelColor={Colors.white}
-                        backgroundColor={LightThemeColors.titleColor}
-                        onPress={() => { navigation.navigate('ChangePassword') }}
-                    />
-                </View> */}
-                <View style={styles.buttonWrapper}>
-                    <Button
-                        label="Log Out"
-                        labelColor={Colors.white}
-                        backgroundColor={LightThemeColors.titleColor}
-                        onPress={() => { handleLogout() }}
-                    />
-                </View>
-
-            </ScrollView>
-        </CustomSafeAreaView>
+  console.log('useriiiiiiiiiii', user);
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          onPress: () => {
+            dispatch(logoutUser());
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LogInScreen' }],
+            });
+          },
+        },
+      ],
+      { cancelable: true },
     );
+  };
+
+  return (
+    <CustomSafeAreaView
+      statusBarBackgroundColor={Colors.white}
+      barStyle="dark-content"
+      style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
+    >
+      <ScrollView
+        bounces={false}
+        overScrollMode='never'
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{flexGrow:1}}
+      >
+        <Header
+          back={true}
+          title={'Profile'}
+          // headerBg={LightThemeColors.titleColor}
+          iconColor={Colors.black}
+          style={{ height: scale(50) }}
+        />
+
+        <View
+          style={[
+            styles.profilePhotoWrapper,
+            {
+              backgroundColor: 'red',
+            },
+          ]}
+        >
+          <Image
+            style={[styles.profileImage]}
+            source={user?.photo ? { uri: user?.photo } : { uri: Local_Image }}
+          />
+        </View>
+        <View style={styles.marginBottom} />
+        <View style={styles.row}>
+          <CustomText
+            style={[styles.title, { color: LightThemeColors.textHighContrast }]}
+          >
+            Full Name :{' '}
+          </CustomText>
+          <View style={styles.valueWrapper}>
+            <CustomText
+              style={[
+                styles.value,
+                { color: LightThemeColors.textLowContrast },
+              ]}
+            >
+              {user?.name}
+            </CustomText>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <CustomText
+            style={[styles.title, { color: LightThemeColors.textHighContrast }]}
+          >
+            Employee Type :{' '}
+          </CustomText>
+          <View style={styles.valueWrapper}>
+            <CustomText
+              style={[
+                styles.value,
+                { color: LightThemeColors.textLowContrast },
+              ]}
+            >
+              {user?.role}
+            </CustomText>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <CustomText
+            style={[styles.title, { color: LightThemeColors.textHighContrast }]}
+          >
+            Employee Id :{' '}
+          </CustomText>
+          <View style={styles.valueWrapper}>
+            <CustomText
+              style={[
+                styles.value,
+                { color: LightThemeColors.textLowContrast },
+              ]}
+            >
+              {user?.employee_code}
+            </CustomText>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <CustomText
+            style={[styles.title, { color: LightThemeColors.textHighContrast }]}
+          >
+            Email :{' '}
+          </CustomText>
+          <View style={styles.valueWrapper}>
+            <CustomText
+              style={[
+                styles.emailText,
+                { color: LightThemeColors.textLowContrast },
+              ]}
+            >
+              {user?.email}
+            </CustomText>
+          </View>
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <Button
+            label="Log Out"
+            labelColor={Colors.white}
+            backgroundColor={LightThemeColors.titleColor}
+            onPress={() => {
+              handleLogout();
+            }}
+          />
+        </View>
+      </ScrollView>
+    </CustomSafeAreaView>
+  );
 };
 
 export default ProfileScreen;

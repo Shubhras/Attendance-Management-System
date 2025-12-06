@@ -8,28 +8,40 @@ import MyEmployeeCard from '../../components/cards/MyEmployeeCard/index.js';
 import { scale } from 'react-native-size-matters';
 import TextInput from '../../components/inputs/TextInput/index.js';
 import Icons from '../../components/Icons/Icons.js';
- import { showMessage } from 'react-native-flash-message';
+import { showMessage } from 'react-native-flash-message';
 import { useSelector } from 'react-redux';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import { getByMachineEmployeList } from '../../api/auth.js';
- 
-const MachineEmployeeScreen = ({ navigation, route }) => {
-  const {machineItem} = route.params; 
-  console.log('titlerrrrrr', machineItem)
+
+// Debounce function
+function debounce(func, delay) {
+  let timeoutId;
+
+  return function (...args) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+}
+
+const MachineEmployeeList = ({ navigation, route }) => {
+  const { machineItem } = route.params;
   const [loading, setLoading] = useState(false);
   const [employee, setEmployee] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [search, setSearch] = useState('');
   const user = useSelector(state => state.users.users);
-  const token = user?.access_token
-  console.log('token',token)
+  const token = user?.access_token;
 
   useEffect(() => {
     getEmployee(page, search, true);
   }, []);
 
-  const handleSearch = useCallback((text) => {
+  const handleSearch = useCallback(text => {
     setSearch(text);
     setPage(1);
     getEmployee(1, text, true);
@@ -39,16 +51,26 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
     if (loading) return;
     setLoading(true);
     try {
-      const response = await getByMachineEmployeList(token,machineItem?.id, searchText, pageNumber);
-      console.log('getEmployee1111',response)
-      if (response?.status == 200) {
+      const response = await getByMachineEmployeList(
+        token,
+        machineItem?.id,
+        searchText,
+        pageNumber,
+      );
+      console.log('getEmployee1111', response);
+      // Updated code with pagination logic
+      if (response?.status === 200) {
         const newData = response?.data || [];
+        const currentPage = response?.pagination?.current_page;
+        const lastPage = response?.pagination?.last_page;
+        // Set employees list
         if (reset) {
           setEmployee(newData);
         } else {
-          setEmployee((prev) => [...prev, ...newData]);
+          setEmployee(prev => [...prev, ...newData]);
         }
-        setHasMore(newData.length > 0);
+        // 🚀 REAL pagination logic
+        setHasMore(currentPage < lastPage);
       }
     } catch (error) {
       showMessage({
@@ -69,11 +91,19 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleDebouncedChange = useCallback(
+    debounce(value => {
+      setPage(1);
+      getEmployee(1, value, true);
+    }, 2000), // Delay of 500 milliseconds
+    [],
+  );
+
   const renderFooter = () =>
     loading ? (
       <ActivityIndicator
         style={{ marginVertical: scale(10) }}
-        size="small"
+        size="large"
         color={LightThemeColors.titleColor}
       />
     ) : null;
@@ -87,8 +117,8 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
         image={item?.photo}
         onPress={() => navigation.navigate('EmployeeInfoScreen', { item })}
       />
-    )
-  }
+    );
+  };
   return (
     <CustomSafeAreaView
       statusBarBackgroundColor={LightThemeColors.titleColor}
@@ -109,7 +139,11 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
             backgroundColor={Colors.grey}
             textInputWrapper={styles.textInputWrapper}
             value={search}
-            onChangeText={handleSearch}
+            // onChangeText={handleSearch}
+            onChangeText={value => {
+              setSearch(value);
+              handleDebouncedChange(value);
+            }}
             rightIcon={
               <Icons
                 name={'search'}
@@ -145,7 +179,12 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
                   color={LightThemeColors.titleColor}
                 />
                 <View style={{ height: scale(10) }} />
-                <CustomText style={[styles.text, { color: LightThemeColors.textHighContrast }]}>
+                <CustomText
+                  style={[
+                    styles.text,
+                    { color: LightThemeColors.textHighContrast },
+                  ]}
+                >
                   No employees found
                 </CustomText>
               </View>
@@ -157,5 +196,4 @@ const MachineEmployeeScreen = ({ navigation, route }) => {
   );
 };
 
-export default MachineEmployeeScreen;
-
+export default MachineEmployeeList;

@@ -47,7 +47,7 @@ const App = () => {
 
 export default App;
 
-// //import liraries
+//import liraries
 // import React, { useEffect, useState } from 'react';
 // import {
 //   Button,

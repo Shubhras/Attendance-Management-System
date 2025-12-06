@@ -8,7 +8,7 @@ import {
   POPPINS_REGULAR,
   SCREEN_WIDTH,
 } from '../../../config/Constants';
-import { LightThemeColors } from '../../../config/Colors';
+import { Colors, LightThemeColors } from '../../../config/Colors';
 
 // Exporting style
 export default StyleSheet.create({
@@ -16,24 +16,35 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    rowGap: scale(25)
+    rowGap: scale(25),
+  },
+  imageContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: scale(120),
+    borderRadius: scale(60),
+    padding: scale(15),
+    marginTop: scale(20),
+    backgroundColor: Colors.grey,
   },
   image: {
-    width: scale(80),
-    height: scale(80),
-    marginTop: scale(30)
+    flex: 1,
+    aspectRatio: 1,
+    width: null,
+    height: null,
   },
   title: {
     fontFamily: POPPINS_MEDIUM,
     fontSize: FONT_SIZE_MD,
-
   },
   titleSuccess: {
+    textAlign: 'center',
     fontFamily: POPPINS_MEDIUM,
     fontSize: FONT_SIZE_MD,
-    marginTop: scale(25)
-
-
+    marginTop: scale(25),
   },
   subTitle: {
     fontFamily: POPPINS_MEDIUM,
@@ -42,8 +53,7 @@ export default StyleSheet.create({
   titlePIN: {
     fontFamily: POPPINS_MEDIUM,
     fontSize: FONT_SIZE_MD,
-    marginTop: scale(30)
-
+    marginTop: scale(30),
   },
   scannig: {
     flexDirection: 'row',
@@ -51,18 +61,18 @@ export default StyleSheet.create({
   },
   indicatorText: {
     fontFamily: POPPINS_REGULAR,
-    fontSize: FONT_SIZE_SM
+    fontSize: FONT_SIZE_SM,
   },
   button: {
     width: SCREEN_WIDTH * 0.4,
     borderWidth: scale(1),
-    borderColor: LightThemeColors.titleColor
+    borderColor: LightThemeColors.titleColor,
   },
   buttonView: {
-     width: SCREEN_WIDTH * 0.9,
-     justifyContent:'center',
-     alignItems:'center'
-   },
+    width: SCREEN_WIDTH * 0.9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   textInputWrapper: {
     width: SCREEN_WIDTH * 0.9,
   },
@@ -75,5 +85,6 @@ export default StyleSheet.create({
   card: {
     alignItems: 'center',
     rowGap: scale(10),
-    marginTop:scale(50)  }
+    marginTop: scale(50),
+  },
 });

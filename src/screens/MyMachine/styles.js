@@ -1,17 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { scale } from 'react-native-size-matters';
+import { Colors } from '../../config/Colors';
 import {
   SCREEN_WIDTH,
   STANDARD_FLEX,
   STANDARD_SPACING,
 } from '../../config/Constants';
-import { Colors } from '../../config/Colors';
 
 // Exporting style
 export default StyleSheet.create({
   mainWrapper: {
     flex: STANDARD_FLEX,
-    
   },
   searchView: {
     marginHorizontal: SCREEN_WIDTH * 0.05,
@@ -23,9 +22,17 @@ export default StyleSheet.create({
     borderRadius: scale(10),
   },
   columnWrapperStyle: {
-     paddingHorizontal: scale(16),
-     justifyContent: 'space-between', 
-     marginBottom: scale(16) 
-   },
- 
+    paddingHorizontal: scale(16),
+    justifyContent: 'space-between',
+    marginBottom: scale(16),
+  },
+  contentContainerStyleEmpty: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  contentContainerStyle: {
+    paddingHorizontal: SCREEN_WIDTH * 0.05,
+    rowGap: scale(10),
+    paddingBottom: scale(10),
+  },
 });

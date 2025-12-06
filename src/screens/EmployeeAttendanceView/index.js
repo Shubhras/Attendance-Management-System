@@ -115,7 +115,7 @@ const Filters = [
   { key: 'half_day', level: 'Half-day' },
 ];
 
-const AttendanceScreen = () => {
+const EmployeeAttendanceView = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -268,7 +268,7 @@ const AttendanceScreen = () => {
   );
 };
 
-export default AttendanceScreen;
+export default EmployeeAttendanceView;
 
 
 

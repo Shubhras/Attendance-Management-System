@@ -80,5 +80,9 @@ export default StyleSheet.create({
   buttonWrapper: {
     marginHorizontal: SCREEN_WIDTH * 0.05,
     marginTop: STANDARD_SPACING * 5
+  },
+  selectDropdown:{
+    marginTop:STANDARD_SPACING * 2,
+    marginHorizontal: STANDARD_SPACING * 3,
   }
 });
