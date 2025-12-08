@@ -46,13 +46,13 @@ const FingerPrintEmployeeList = ({ navigation }) => {
   // }, []);
 
   useEffect(() => {
-  const unsubscribe = navigation.addListener('focus', () => {
-    setPage(1);
-    getEmployee(1, search, true); // Always load latest list
-  });
+    const unsubscribe = navigation.addListener('focus', () => {
+      setPage(1);
+      getEmployee(1, search, true); // Always load latest list
+    });
 
-  return unsubscribe;
-}, [navigation]);
+    return unsubscribe;
+  }, [navigation]);
 
   const getEmployee = async (pageNumber, searchText, reset = false) => {
     if (loading) return;
@@ -102,14 +102,13 @@ const FingerPrintEmployeeList = ({ navigation }) => {
     }
   };
 
-    const handleDebouncedChange = useCallback(
-      debounce(value => {
-        setPage(1);
-        getEmployee(1, value, true);
-      }, 2000), // Delay of 500 milliseconds
-      [],
-    );
-
+  const handleDebouncedChange = useCallback(
+    debounce(value => {
+      setPage(1);
+      getEmployee(1, value, true);
+    }, 2000), // Delay of 500 milliseconds
+    [],
+  );
 
   const renderFooter = () =>
     loading ? (
@@ -137,7 +136,7 @@ const FingerPrintEmployeeList = ({ navigation }) => {
     );
   };
 
-    const EmptyList = () => {
+  const EmptyList = () => {
     return !loading && <EmptyCart message="No employees found" />;
   };
 
@@ -184,10 +183,10 @@ const FingerPrintEmployeeList = ({ navigation }) => {
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={
-                      employee.length === 0
-                        ? styles.contentContainerStyleEmpty
-                        : styles.contentContainerStyle
-                    }
+            employee.length === 0
+              ? styles.contentContainerStyleEmpty
+              : styles.contentContainerStyle
+          }
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}

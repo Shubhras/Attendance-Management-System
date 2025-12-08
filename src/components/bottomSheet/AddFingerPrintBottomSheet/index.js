@@ -63,7 +63,7 @@ const AddFingerPrintBottomSheet = ({
           deviceInfo: info,
           captureResult: result,
           captureTemplet: template,
-          // captureImage: image,
+          captureImage: image,
           handType: HandType,
           fingerType: FingerType,
         };

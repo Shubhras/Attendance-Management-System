@@ -331,3 +331,31 @@ export const AllEmpReports = async (token, startYMD, endYMD) => {
       });
   });
 };
+// https://attendanceapp.digiprima.co/api/operator/employees/15/attendance/monthly?year=2025&date=2025-12-01&month=12
+
+export const MonthlyEmpReport = async ({token, id, year, date='', month=''}) => {
+  return new Promise((resolve, reject) => {
+    const config = {
+      method: 'GET',
+      url: `${API_URL}/api/operator/employees/${id}/attendance/monthly?year${year}&date=${date}&month=${month}`,
+      headers: {
+        'Content-Type': 'Application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    axios
+      .request(config)
+      .then(response => {
+        resolve(response.data);
+      })
+      .catch(error => {
+        if (error.response) {
+          reject(error.response.data);
+        } else if (error.request) {
+          reject(error);
+        } else {
+          reject(error);
+        }
+      });
+  });
+};

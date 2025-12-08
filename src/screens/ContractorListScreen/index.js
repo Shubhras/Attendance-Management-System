@@ -265,7 +265,7 @@ const ContractorListScreen = ({ navigation }) => {
             loading && (
               <ActivityIndicator
                 style={{ marginVertical: scale(10) }}
-                size="small"
+                size="large"
                 color={LightThemeColors.titleColor}
               />
             )

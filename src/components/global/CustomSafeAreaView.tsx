@@ -1,5 +1,12 @@
 import React, { FC, ReactNode } from 'react';
-import { StatusBar, StyleSheet, View, ViewStyle, StatusBarStyle } from 'react-native';
+import {
+  StatusBar,
+  StyleSheet,
+  View,
+  ViewStyle,
+  StatusBarStyle,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../config/Colors';
 
@@ -10,17 +17,23 @@ interface CustomSafeAreaViewProps {
   style?: ViewStyle;
 }
 
+const isAndroid14Plus = Platform.OS === 'android' && Platform.Version >= 34;
+
 const CustomSafeAreaView: FC<CustomSafeAreaViewProps> = ({
-  statusBarBackgroundColor ,
+  statusBarBackgroundColor,
   barStyle,
   children,
   style,
 }) => {
-
   return (
     <SafeAreaView style={[styles.container, style]}>
       <StatusBar
-        backgroundColor={statusBarBackgroundColor ? statusBarBackgroundColor : Colors.white}
+        translucent={isAndroid14Plus}
+        backgroundColor={
+          isAndroid14Plus
+            ? 'transparent'
+            : statusBarBackgroundColor ?? Colors.white
+        }
         barStyle={barStyle || 'light-content'}
       />
       <View style={[styles.container, style]}>{children}</View>

@@ -89,8 +89,6 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
     }
   };
 
-  console.log('employxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', employee);
-
   function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -404,7 +402,7 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                   backgroundColor={LightThemeColors.titleColor}
                   onPress={() => {
                     if (employee?.fingerprint_template_data) {
-                      navigation.navigate('EmployeeAttendanceView');
+                      navigation.navigate('EmployeeAttendanceView', {id: employee.id});
                     } else {
                       Alert.alert(
                         'No Fingerprint Found',

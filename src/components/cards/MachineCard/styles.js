@@ -1,8 +1,13 @@
-
-import { StyleSheet } from "react-native";
-import { FONT_SIZE_SM, FONT_SIZE_XS, FONT_SIZE_XXS, POPPINS_MEDIUM, POPPINS_REGULAR, SCREEN_WIDTH, STANDARD_BORDER_RADIUS, STANDARD_SPACING } from "../../../config/Constants";
-import { scale } from "react-native-size-matters";
-
+import { StyleSheet } from 'react-native';
+import { scale } from 'react-native-size-matters';
+import {
+  FONT_SIZE_XS,
+  FONT_SIZE_XXS,
+  POPPINS_MEDIUM,
+  POPPINS_REGULAR,
+  SCREEN_WIDTH,
+  STANDARD_BORDER_RADIUS,
+} from '../../../config/Constants';
 
 export default StyleSheet.create({
   card: {
@@ -18,7 +23,7 @@ export default StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     justifyContent: 'space-between',
-    rowGap: scale(5)
+    rowGap: scale(5),
   },
   icon: {
     width: scale(40),
@@ -26,25 +31,21 @@ export default StyleSheet.create({
     alignSelf: 'center',
     marginBottom: scale(8),
   },
-
   machineName: {
     fontSize: FONT_SIZE_XS,
     fontFamily: POPPINS_MEDIUM,
-    lineHeight: scale(15)
+    lineHeight: scale(15),
   },
   managerName: {
     fontSize: FONT_SIZE_XXS,
     fontFamily: POPPINS_MEDIUM,
-    lineHeight: scale(15)
+    lineHeight: scale(15),
   },
   employeeCount: {
     fontSize: FONT_SIZE_XXS,
     fontFamily: POPPINS_REGULAR,
-    lineHeight: scale(15)
-
-
+    lineHeight: scale(15),
   },
-
   imageWrapper: {
     alignItems: 'center',
     borderRadius: scale(10),

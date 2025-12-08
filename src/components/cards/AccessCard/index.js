@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import FastImage from '@d11/react-native-fast-image';
 import styles from './styles';
 import { Colors, LightThemeColors } from '../../../config/Colors';
+import { CustomText } from '../../global/CustomComponents';
 
 // Functional component
 const CouponCard = ({
@@ -10,13 +11,21 @@ const CouponCard = ({
   defaultSource,
   title,
   subtitle,
+  subtitleValue,
   onPress,
 }) => {
+  console.log('zzzzlzlzlzlz',subtitle,subtitleValue );
+  
   // Returning
   return (
-    <Pressable onPress={onPress} style={[styles.card, { backgroundColor: Colors.white }]}>
+    <Pressable
+      onPress={onPress}
+      style={[styles.card, { backgroundColor: Colors.white }]}
+    >
       <View style={[styles.imageWrapper]}>
-        <View style={[styles.brandImageWrapper, { backgroundColor: Colors.white }]}>
+        <View
+          style={[styles.brandImageWrapper, { backgroundColor: Colors.white }]}
+        >
           <FastImage
             style={styles.brandImage}
             source={categoryImage}
@@ -26,19 +35,20 @@ const CouponCard = ({
       </View>
       <View style={[styles.detailsBackgroundImageWrapper]}>
         <View style={[styles.detailsWrapper]}>
-          <Text
+          <CustomText
             style={[styles.title, { color: LightThemeColors.textHighContrast }]}
           >
             {title}
-          </Text>
-          <Text
+          </CustomText>
+          <CustomText
             style={[
               styles.validUpto,
               { color: LightThemeColors.textLowContrast },
             ]}
           >
-            {subtitle}
-          </Text>
+            {subtitle === 'Today' ? subtitle : `${subtitle}: `}
+            <CustomText style={styles.countItem}>{subtitleValue}</CustomText>
+          </CustomText>
         </View>
       </View>
     </Pressable>

@@ -1,14 +1,15 @@
+import FastImage from '@d11/react-native-fast-image';
 import React from 'react';
-import { View, Image, ScrollView, Alert } from 'react-native';
-import styles from './styles.js';
-import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
-import { Colors, LightThemeColors } from '../../config/Colors.js';
-import { CustomText } from '../../components/global/CustomComponents.js';
-import Header from '../../components/header/index.js';
+import { Alert, ScrollView, View } from 'react-native';
 import { scale } from 'react-native-size-matters';
-import Button from '../../components/buttons/Button/index.js';
-import { logoutUser } from '../../redux/slices/SessionUser.js';
 import { useDispatch, useSelector } from 'react-redux';
+import Button from '../../components/buttons/Button/index.js';
+import { CustomText } from '../../components/global/CustomComponents.js';
+import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
+import Header from '../../components/header/index.js';
+import { Colors, LightThemeColors } from '../../config/Colors.js';
+import { logoutUser } from '../../redux/slices/SessionUser.js';
+import styles from './styles.js';
 
 const Local_Image =
   'https://img.freepik.com/premium-vector/user-profile-people-icon-isolated-white-background_322958-4540.jpg?semt=ais_hybrid&w=740&q=80';
@@ -51,9 +52,9 @@ const ProfileScreen = ({ navigation }) => {
     >
       <ScrollView
         bounces={false}
-        overScrollMode='never'
+        overScrollMode="never"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{flexGrow:1}}
+        contentContainerStyle={{ flexGrow: 1 }}
       >
         <Header
           back={true}
@@ -63,17 +64,11 @@ const ProfileScreen = ({ navigation }) => {
           style={{ height: scale(50) }}
         />
 
-        <View
-          style={[
-            styles.profilePhotoWrapper,
-            {
-              backgroundColor: 'red',
-            },
-          ]}
-        >
-          <Image
-            style={[styles.profileImage]}
+        <View style={styles.profilePhotoWrapper}>
+          <FastImage
             source={user?.photo ? { uri: user?.photo } : { uri: Local_Image }}
+            style={[styles.profileImage]}
+            resizeMode="contain"
           />
         </View>
         <View style={styles.marginBottom} />

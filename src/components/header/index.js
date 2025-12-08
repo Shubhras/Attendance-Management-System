@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Pressable } from 'react-native';
+import FastImage from '@d11/react-native-fast-image';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Pressable,
+} from 'react-native';
 import { scale } from 'react-native-size-matters';
 import { useNavigation } from '@react-navigation/native';
 import Icons from '../Icons/Icons';
@@ -28,7 +36,7 @@ const Header = ({
   date,
   time,
   employeeId,
-  imageOnPress
+  imageOnPress,
 }) => {
   const navigation = useNavigation();
 
@@ -37,14 +45,18 @@ const Header = ({
       {leftComponent && (
         <View style={styles.profileView}>
           <Pressable onPress={imageOnPress}>
-          <Image 
-            source={
-              profileImage
-                ? { uri: profileImage }
-                : require('../../assets/images/Container.png')
-            }
-            style={styles.profileImage}
-          />
+            <FastImage
+              source={
+                profileImage
+                  ? {
+                      uri: profileImage,
+                      priority: FastImage.priority.high,
+                    }
+                  : require('../../assets/images/Container.png')
+              }
+              style={styles.profileImage}
+              resizeMode="contain"
+            />
           </Pressable>
           <View>
             <CustomText style={[styles.welcomenText, { color: textColor }]}>
@@ -155,10 +167,10 @@ const styles = StyleSheet.create({
     fontFamily: POPPINS_REGULAR,
     fontSize: FONT_SIZE_SM,
     width: scale(130),
-    lineHeight:scale(20),
-    textTransform:'capitalize'
+    lineHeight: scale(20),
+    textTransform: 'capitalize',
   },
-  welcomenText:{
+  welcomenText: {
     fontFamily: POPPINS_SEMIBOLD,
     fontSize: FONT_SIZE_SM,
     width: scale(130),

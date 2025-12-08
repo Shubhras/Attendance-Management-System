@@ -3,6 +3,7 @@ import { scale } from 'react-native-size-matters';
 import {
   FONT_SIZE_SM,
   FONT_SIZE_XS,
+  POPPINS_BOLD,
   POPPINS_MEDIUM,
   POPPINS_REGULAR,
   STANDARD_COUPON_CARD_BRAND_IMAGE_WRAPPER_SIZE,
@@ -65,4 +66,8 @@ export default StyleSheet.create({
     fontFamily: POPPINS_REGULAR,
     fontSize: FONT_SIZE_XS,
   },
+  countItem:{
+    fontFamily: POPPINS_BOLD,
+    fontSize: FONT_SIZE_XS
+  }
 });

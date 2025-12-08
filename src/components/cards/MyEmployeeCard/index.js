@@ -1,7 +1,8 @@
-import { Image, Pressable, View } from 'react-native';
-import styles from './styles';
-import { CustomText } from '../../global/CustomComponents';
+import FastImage from '@d11/react-native-fast-image';
+import { Pressable, View } from 'react-native';
 import { Colors, LightThemeColors } from '../../../config/Colors';
+import { CustomText } from '../../global/CustomComponents';
+import styles from './styles';
 const MyEmployeeCard = ({
   onPress,
   name,
@@ -10,7 +11,7 @@ const MyEmployeeCard = ({
   image,
   status,
 }) => {
- const getStatus = statusValue => {
+  const getStatus = statusValue => {
     // Convert to number for comparison
     const value = Number(statusValue);
     switch (value) {
@@ -18,8 +19,8 @@ const MyEmployeeCard = ({
         return { color: '#4CAF50', icon: 'PR' }; // Present
       case 0:
         return { color: '#CBD5E1', icon: 'PE' }; // Pending/Absent
-        case 2:
-        return { color: '#FDDA0D', icon: 'HD' }; // Pending/Absent  
+      case 2:
+        return { color: '#FDDA0D', icon: 'HD' }; // Pending/Absent
       default:
         return { color: '#CBD5E1', icon: 'PE' };
     }
@@ -29,13 +30,17 @@ const MyEmployeeCard = ({
 
   return (
     <Pressable style={styles.card} onPress={onPress}>
-      <Image
+      <FastImage
         source={
           image
-            ? { uri: image }
+            ? {
+                uri: image,
+                priority: FastImage.priority.high,
+              }
             : require('../../../assets/images/Container.png')
         }
         style={styles.icon}
+        resizeMode="cover"
       />
       <View style={styles.textView}>
         <CustomText

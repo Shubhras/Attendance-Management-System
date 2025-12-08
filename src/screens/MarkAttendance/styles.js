@@ -14,6 +14,7 @@ export default StyleSheet.create({
   },
   searchView: {
     marginHorizontal: SCREEN_WIDTH * 0.05,
+    marginBottom: STANDARD_SPACING * 2,
     marginTop: STANDARD_SPACING * 5,
   },
   textInputWrapper: {
@@ -31,8 +32,8 @@ export default StyleSheet.create({
     alignItems: 'center'
   },
   contentContainerStyle: {
-    paddingHorizontal: SCREEN_WIDTH * 0.05,
+    paddingHorizontal: STANDARD_SPACING * 2.2,
     rowGap: scale(10),
-    paddingBottom: scale(10)
+    paddingBottom: scale(10),
   },
 });

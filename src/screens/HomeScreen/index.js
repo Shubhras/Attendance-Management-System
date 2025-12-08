@@ -1,7 +1,8 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { scale } from 'react-native-size-matters';
+import { FlatGrid } from 'react-native-super-grid';
 import { useSelector } from 'react-redux';
 import { HomeCount } from '../../api/auth.js';
 import { Indicators } from '../../components/apploader';
@@ -11,9 +12,7 @@ import { CustomText } from '../../components/global/CustomComponents.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
-import { SCREEN_WIDTH } from '../../config/Constants.js';
 import { getHomeData } from '../../data/Homedata.js';
-import { FlatGrid } from 'react-native-super-grid';
 import styles from './styles.js';
 
 const HomeScreen = ({ navigation }) => {
@@ -105,8 +104,11 @@ const HomeScreen = ({ navigation }) => {
         bounces={false}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={ListHeader}
-        renderItem={({ item }) => (
-          <AccessCard
+        renderItem={({ item }) => {
+          console.log('xlxlxlxlx',item);
+          
+          return(
+            <AccessCard
             key={item?.id}
             title={item.title}
             subtitle={item.subtitle}
@@ -121,7 +123,8 @@ const HomeScreen = ({ navigation }) => {
               }
             }}
           />
-        )}
+          )
+        }}
       />
       <MyExportBottomSheet
         sheetRef={bottomSheetRef}

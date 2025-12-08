@@ -42,7 +42,7 @@ export default StyleSheet.create({
   filterButton: {
     borderWidth: 1,
     height: scale(26),
-    width: scale(60),
+    width: scale(75),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: scale(5)
