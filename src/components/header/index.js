@@ -17,6 +17,7 @@ import {
   FONT_SIZE_SM,
   POPPINS_REGULAR,
   FONT_SIZE_XXS,
+  STANDARD_USER_AVATAR_WRAPPER_SIZE,
 } from '../../config/Constants';
 import { CustomText } from '../global/CustomComponents';
 import { Colors } from '../../config/Colors';
@@ -44,7 +45,7 @@ const Header = ({
     <View style={[styles.view]}>
       {leftComponent && (
         <View style={styles.profileView}>
-          <Pressable onPress={imageOnPress}>
+          <Pressable onPress={imageOnPress} style={styles.profileWrapper}>
             <FastImage
               source={
                 profileImage
@@ -55,7 +56,7 @@ const Header = ({
                   : require('../../assets/images/Container.png')
               }
               style={styles.profileImage}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           </Pressable>
           <View>
@@ -116,7 +117,7 @@ export default Header;
 
 const styles = StyleSheet.create({
   header: {
-    height: scale(120),
+    height: scale(80),
     justifyContent: 'space-between',
     alignItems: 'center',
     flexDirection: 'row',
@@ -153,10 +154,19 @@ const styles = StyleSheet.create({
     fontFamily: POPPINS_SEMIBOLD,
     fontSize: FONT_SIZE_SM,
   },
+  profileWrapper:{
+    height: scale(55),
+    borderRadius: scale(55) * 0.5,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    backgroundColor: 'green'
+  },
   profileImage: {
-    height: scale(50),
-    width: scale(50),
-    borderRadius: scale(25),
+    flex:1,
+    aspectRatio: 1,
+    width: null,
+    height: null,
   },
   profileView: {
     flexDirection: 'row',

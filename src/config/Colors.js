@@ -20,7 +20,7 @@ const LightThemeColors = {
   borderlineActive: '#E4E4E4',
   borderlineInactive: '#EEEEEE',
   blurEffect: '#E9E9E9',
-  titleColor:'#1A2A7A'
+  titleColor: '#1A2A7A',
 };
 
 // Defining dark theme colors
@@ -77,10 +77,11 @@ const Colors = {
   lightBlackBackground: '#2F2D2D',
   lightBlackIconBackground: '#3F3D3D',
   lightgary: '#969392',
-  inactiveStar: '#CCCCCC', 
-  pomegranate:'#D61313',
+  inactiveStar: '#CCCCCC',
+  pomegranate: '#D61313',
   textHighContrast: '#30334F',
   textLowContrast: '#ADB4D2',
+  primary: '#1A2A7A',
 };
 
 // Exporting colors

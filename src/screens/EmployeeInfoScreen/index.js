@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   ScrollView,
+  StatusBar,
   View,
 } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
@@ -18,6 +19,7 @@ import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
 import styles from './styles.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const EmployeeInfoScreen = ({ navigation, route }) => {
   const { FirngerPrint, MyEmployee, item } = route.params;
@@ -98,10 +100,16 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
   }
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -402,7 +410,9 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                   backgroundColor={LightThemeColors.titleColor}
                   onPress={() => {
                     if (employee?.fingerprint_template_data) {
-                      navigation.navigate('EmployeeAttendanceView', {id: employee.id});
+                      navigation.navigate('EmployeeAttendanceView', {
+                        id: employee.id,
+                      });
                     } else {
                       Alert.alert(
                         'No Fingerprint Found',
@@ -468,7 +478,7 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
           navigation.goBack();
         }}
       />
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

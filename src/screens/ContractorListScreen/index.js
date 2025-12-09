@@ -5,6 +5,7 @@ import {
   FlatList,
   PermissionsAndroid,
   Platform,
+  StatusBar,
   View,
 } from 'react-native';
 import styles from './styles.js';
@@ -22,6 +23,7 @@ import { CustomText } from '../../components/global/CustomComponents.js';
 import RNFetchBlob from 'rn-fetch-blob';
 import { API_URL } from '../../../env.js';
 import EmptyCart from '../../components/alerts/EmptyCart/index.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // -----------------------------------------------
 //  PERMISSION
@@ -217,10 +219,16 @@ const ContractorListScreen = ({ navigation }) => {
   };
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -288,7 +296,7 @@ const ContractorListScreen = ({ navigation }) => {
           // }
         />
       </View>
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

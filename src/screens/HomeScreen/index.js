@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { StatusBar, View } from 'react-native';
 import { scale } from 'react-native-size-matters';
 import { FlatGrid } from 'react-native-super-grid';
 import { useSelector } from 'react-redux';
@@ -14,6 +14,7 @@ import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
 import { getHomeData } from '../../data/Homedata.js';
 import styles from './styles.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = ({ navigation }) => {
   const user = useSelector(state => state.users.users);
@@ -78,63 +79,70 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="light-content"
-      style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
-      <Header
-        headerBg={LightThemeColors.titleColor}
-        iconColor={Colors.white}
-        leftComponent
-        textColor={Colors.white}
-        profileImage={userdata?.photo}
-        name={userdata?.name}
-        employeeId={userdata?.employee_code}
-        imageOnPress={() => {
-          navigation.navigate('ProfileScreen');
-        }}
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
       />
-      {/* Flatgrid */}
-      <FlatGrid
-        itemDimension={scale(130)}
-        data={homeData}
-        style={styles.flatGrid}
-        spacing={scale(15)}
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={ListHeader}
-        renderItem={({ item }) => {
-          console.log('xlxlxlxlx',item);
-          
-          return(
-            <AccessCard
-            key={item?.id}
-            title={item.title}
-            subtitle={item.subtitle}
-            categoryImage={item.icon}
-            defaultSource={item.defaultSource}
-            subtitleValue={item?.subtitleValue}
-            onPress={() => {
-              if (item?.onPress == 'MyExport') {
-                bottomSheetRef.current?.expand();
-              } else {
-                navigation.navigate(item?.onPress);
-              }
-            }}
-          />
-          )
-        }}
-      />
-      <MyExportBottomSheet
-        sheetRef={bottomSheetRef}
-        onCancel={() => {
-          bottomSheetRef.current?.close();
-        }}
-        token={token}
-      />
-      {loading && <Indicators />}
-    </CustomSafeAreaView>
+      <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
+        <Header
+          headerBg={LightThemeColors.titleColor}
+          iconColor={Colors.white}
+          leftComponent
+          textColor={Colors.white}
+          profileImage={userdata?.photo}
+          name={userdata?.name}
+          employeeId={userdata?.employee_code}
+          imageOnPress={() => {
+            navigation.navigate('ProfileScreen');
+          }}
+        />
+        {/* Flatgrid */}
+        <FlatGrid
+          itemDimension={scale(130)}
+          data={homeData}
+          style={styles.flatGrid}
+          spacing={scale(15)}
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={ListHeader}
+          renderItem={({ item }) => {
+            console.log('xlxlxlxlx', item);
+
+            return (
+              <AccessCard
+                key={item?.id}
+                title={item.title}
+                subtitle={item.subtitle}
+                categoryImage={item.icon}
+                defaultSource={item.defaultSource}
+                subtitleValue={item?.subtitleValue}
+                onPress={() => {
+                  if (item?.onPress == 'MyExport') {
+                    bottomSheetRef.current?.expand();
+                  } else {
+                    navigation.navigate(item?.onPress);
+                  }
+                }}
+              />
+            );
+          }}
+        />
+        <MyExportBottomSheet
+          sheetRef={bottomSheetRef}
+          onCancel={() => {
+            bottomSheetRef.current?.close();
+          }}
+          token={token}
+        />
+        {loading && <Indicators />}
+      </View>
+    </SafeAreaView>
   );
 };
 

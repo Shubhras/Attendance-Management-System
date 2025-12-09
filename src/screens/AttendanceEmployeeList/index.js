@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StatusBar,
+  View,
+} from 'react-native';
 import styles from './styles.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
@@ -13,6 +19,7 @@ import { useSelector } from 'react-redux';
 import { getByMachineEmployeList } from '../../api/auth.js';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Debounce function
 function debounce(func, delay) {
@@ -170,10 +177,16 @@ const AttendanceEmployeeList = ({ navigation, route }) => {
     />
   );
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -251,7 +264,7 @@ const AttendanceEmployeeList = ({ navigation, route }) => {
           AttendanceUpdateList(id);
         }}
       />
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

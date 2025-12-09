@@ -32,6 +32,7 @@ export default StyleSheet.create({
     justifyContent: 'flex-end',
     height: scale(100),
     borderRadius: scale(50),
+    marginTop: scale(30),
   },
   profileImage: {
     flex: 1,
@@ -61,8 +62,10 @@ export default StyleSheet.create({
     fontFamily: POPPINS_SEMIBOLD,
   },
   buttonWrapper: {
-    marginTop: scale(20),
-    marginHorizontal: SCREEN_WIDTH * 0.06,
+    position: 'absolute',
+    bottom: scale(40),
+    alignSelf: 'center',
+    width: SCREEN_WIDTH * 0.85,
   },
   row: {
     marginHorizontal: SCREEN_WIDTH * 0.08,

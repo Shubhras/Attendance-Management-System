@@ -274,10 +274,14 @@
 
 // export default EmployeeAttendanceView;
 
-
-
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StatusBar,
+  View,
+} from 'react-native';
 import moment from 'moment';
 import styles from './styles.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
@@ -291,6 +295,7 @@ import MonthPicker from 'react-native-month-year-picker';
 import { MonthlyEmpReport } from '../../api/auth.js';
 import { useSelector } from 'react-redux';
 import { showMessage } from 'react-native-flash-message';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Filters = [
   { key: 'all', level: 'All' },
@@ -342,7 +347,7 @@ const EmployeeAttendanceView = ({ route }) => {
     return moment(timeString, 'HH:mm:ss').format('hh:mm A');
   };
 
-// Fetch attendance data
+  // Fetch attendance data
   const getMonthReport = selectedMoment => {
     if (!id || !selectedMoment) {
       console.log('Missing required parameters');
@@ -353,67 +358,68 @@ const EmployeeAttendanceView = ({ route }) => {
     const yearParam = selectedMoment.format('YYYY');
 
     setLoading(true);
-    
+
     MonthlyEmpReport({
       token,
       id,
       month: monthParam,
       year: yearParam,
     })
-    .then((response) => {
-      console.log('Monthly Report Response:', response);
+      .then(response => {
+        console.log('Monthly Report Response:', response);
 
-      if (response?.status === true) {
-        // Format attendance data from API response
-        const formattedData = (response?.data || []).map(item => {
-          const attendanceDate = moment(item.date);
-          const status = getStatusText(
-            item.status,
-            item.clock_in,
-            item.clock_out,
-          );
+        if (response?.status === true) {
+          // Format attendance data from API response
+          const formattedData = (response?.data || []).map(item => {
+            const attendanceDate = moment(item.date);
+            const status = getStatusText(
+              item.status,
+              item.clock_in,
+              item.clock_out,
+            );
 
-          return {
-            id: item.id,
-            date: attendanceDate.format('YYYY-MM-DD'),
-            day: attendanceDate.format('ddd'),
-            time_in: formatTime(item.clock_in),
-            time_out: formatTime(item.clock_out),
-            status: status,
-            raw_status: item.status,
-            scan_status: item.scan_status,
-          };
-        });
+            return {
+              id: item.id,
+              date: attendanceDate.format('YYYY-MM-DD'),
+              day: attendanceDate.format('ddd'),
+              time_in: formatTime(item.clock_in),
+              time_out: formatTime(item.clock_out),
+              status: status,
+              raw_status: item.status,
+              scan_status: item.scan_status,
+            };
+          });
 
-        setAttendanceData(formattedData);
+          setAttendanceData(formattedData);
 
-        // Set summary data
-        if (response?.summary) {
-          setSummary(response.summary);
+          // Set summary data
+          if (response?.summary) {
+            setSummary(response.summary);
+          }
+        } else {
+          showMessage({
+            message: 'Error',
+            description:
+              response?.message || 'Failed to fetch attendance data.',
+            type: 'danger',
+          });
+          setAttendanceData([]);
+          setSummary({ present: 0, leave: 0, half_day: 0 });
         }
-      } else {
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching attendance:', error);
         showMessage({
           message: 'Error',
-          description: response?.message || 'Failed to fetch attendance data.',
+          description:
+            error?.message || 'Something went wrong. Please try again.',
           type: 'danger',
         });
         setAttendanceData([]);
         setSummary({ present: 0, leave: 0, half_day: 0 });
-      }
-      setLoading(false);
-    })
-    .catch((error) => {
-      console.error('Error fetching attendance:', error);
-      showMessage({
-        message: 'Error',
-        description:
-          error?.message || 'Something went wrong. Please try again.',
-        type: 'danger',
+        setLoading(false);
       });
-      setAttendanceData([]);
-      setSummary({ present: 0, leave: 0, half_day: 0 });
-      setLoading(false);
-    });
   };
 
   // Fetch data when currentMoment changes
@@ -486,13 +492,13 @@ const EmployeeAttendanceView = ({ route }) => {
   const getDateLimits = () => {
     const today = new Date();
     const currentYear = today.getFullYear();
-    
+
     // Minimum date: 3 months ago from current month, day 1
     const minDate = new Date(currentYear, today.getMonth() - 2, 1);
-    
+
     // Maximum date: Current month, last day
     const maxDate = new Date(currentYear, today.getMonth() + 1, 0);
-    
+
     return { minDate, maxDate };
   };
 
@@ -517,10 +523,16 @@ const EmployeeAttendanceView = ({ route }) => {
   );
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back
@@ -583,11 +595,11 @@ const EmployeeAttendanceView = ({ route }) => {
                   ]}
                 >
                   {i == 1
-                    ? item.level + " ("+summary.present+')'
+                    ? item.level + ' (' + summary.present + ')'
                     : i == 2
-                    ? item.level + " ("+summary.leave+')'
+                    ? item.level + ' (' + summary.leave + ')'
                     : i == 3
-                    ? item.level + " ("+summary.half_day+')'
+                    ? item.level + ' (' + summary.half_day + ')'
                     : item.level}
                 </CustomText>
               </Pressable>
@@ -631,7 +643,7 @@ const EmployeeAttendanceView = ({ route }) => {
           />
         )}
       </View>
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

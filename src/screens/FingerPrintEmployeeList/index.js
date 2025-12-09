@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, View } from 'react-native';
+import { ActivityIndicator, FlatList, StatusBar, View } from 'react-native';
 import { scale } from 'react-native-size-matters';
 import { useSelector } from 'react-redux';
 import {
@@ -16,6 +16,7 @@ import { Colors, LightThemeColors } from '../../config/Colors.js';
 import styles from './styles.js';
 import { showMessage } from 'react-native-flash-message';
 import EmptyCart from '../../components/alerts/EmptyCart/index.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Debounce function
 function debounce(func, delay) {
@@ -141,10 +142,16 @@ const FingerPrintEmployeeList = ({ navigation }) => {
   };
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -214,7 +221,7 @@ const FingerPrintEmployeeList = ({ navigation }) => {
           // }
         />
       </View>
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

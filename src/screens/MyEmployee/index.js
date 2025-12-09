@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { FlatList, View, ActivityIndicator } from 'react-native';
+import { FlatList, View, ActivityIndicator, StatusBar } from 'react-native';
 import styles from './styles.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import { useFocusEffect } from '@react-navigation/native';
 import EmptyCart from '../../components/alerts/EmptyCart';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Debounce function
 function debounce(func, delay) {
@@ -162,10 +163,16 @@ const MyEmployee = ({ navigation }) => {
   };
 
   return (
-    <CustomSafeAreaView
-      statusBarBackgroundColor={LightThemeColors.titleColor}
-      barStyle="white"
+    <SafeAreaView
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
+      <StatusBar
+        animated={true} // Animate transitions between style changes
+        backgroundColor="transparent" // Make status bar transparent (requires translucent=true)
+        barStyle="light-content" // Set text and icon color (light-content or dark-content)
+        hidden={false} // Show or hide the status bar
+        translucent={true} // Allow content to draw under the status bar
+      />
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
@@ -235,7 +242,7 @@ const MyEmployee = ({ navigation }) => {
           // }
         />
       </View>
-    </CustomSafeAreaView>
+    </SafeAreaView>
   );
 };
 

@@ -81,13 +81,16 @@ const LogInScreen = ({ navigation }) => {
       barStyle={'dark-content'}
       style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
     >
-      <ScrollView
-        bounces={false}
-        overScrollMode="never"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? scale(50) : scale(50)}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }}>
+        <ScrollView
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+          overScrollMode="never"
+        >
           <View style={styles.logoContainer}>
             <View style={styles.logoWrapper}>
               <Image
@@ -182,8 +185,8 @@ const LogInScreen = ({ navigation }) => {
               </>
             )}
           </Formik>
-        </KeyboardAvoidingView>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </CustomSafeAreaView>
   );
 };

@@ -46,24 +46,23 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <CustomSafeAreaView
-      statusBarBackgroundColor={Colors.white}
-      barStyle="dark-content"
+      statusBarBackgroundColor={Colors.primary}
+      barStyle="light-content"
       style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
     >
+       <Header
+          back={true}
+          title={'Profile'}
+          headerBg={Colors.primary}
+          iconColor={Colors.white}
+          style={{ height: scale(50) }}
+        />
       <ScrollView
         bounces={false}
         overScrollMode="never"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        <Header
-          back={true}
-          title={'Profile'}
-          // headerBg={LightThemeColors.titleColor}
-          iconColor={Colors.black}
-          style={{ height: scale(50) }}
-        />
-
         <View style={styles.profilePhotoWrapper}>
           <FastImage
             source={user?.photo ? { uri: user?.photo } : { uri: Local_Image }}
