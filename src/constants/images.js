@@ -3,4 +3,5 @@ export const Images = {
   WrongFingerPrint: require('../assets/images/Animation/WrongFingerprint.gif'),
   FingerprintSuccess: require('../assets/images/Animation/FingerprintSuccess.gif'),
   NoEmployee: require('../assets/images/Animation/Noemployee.gif'),
+  Loading: require('../assets/images/Animation/Loading.gif'),
 };

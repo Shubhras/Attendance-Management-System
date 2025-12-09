@@ -296,6 +296,10 @@ import { MonthlyEmpReport } from '../../api/auth.js';
 import { useSelector } from 'react-redux';
 import { showMessage } from 'react-native-flash-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import EmptyCart from '../../components/alerts/EmptyCart/index.js';
+import FastImage from '@d11/react-native-fast-image';
+import Loading from '../../assets/images/Animation/Loading.gif';
+import { Images } from '../../constants/images.js';
 
 const Filters = [
   { key: 'all', level: 'All' },
@@ -515,11 +519,20 @@ const EmployeeAttendanceView = ({ route }) => {
   );
 
   const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <CustomText style={styles.emptyText}>
-        {loading ? 'Loading...' : 'No attendance records found for this month.'}
-      </CustomText>
-    </View>
+    <>
+      {loading ? (
+        <View style={styles.imageContainer}>
+          <FastImage
+            source={Images.Loading}
+            defaultSource={Loading}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
+      ) : (
+        <EmptyCart message="No attendance records found for this month." />
+      )}
+    </>
   );
 
   return (
@@ -626,7 +639,11 @@ const EmployeeAttendanceView = ({ route }) => {
             keyExtractor={(item, index) => `${item.id}-${index}`}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.contentContainerStyle}
+            contentContainerStyle={
+              filteredData.length === 0
+                ? styles.contentContainerStyleEmpty
+                : styles.contentContainerStyle
+            }
             ListEmptyComponent={renderEmptyComponent}
           />
         )}

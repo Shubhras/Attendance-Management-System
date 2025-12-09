@@ -20,6 +20,7 @@ import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
 import styles from './styles.js';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FONT_SIZE_MD, FONT_SIZE_XS, FONT_SIZE_XXS, POPPINS_REGULAR } from '../../config/Constants.js';
 
 const EmployeeInfoScreen = ({ navigation, route }) => {
   const { FirngerPrint, MyEmployee, item } = route.params;
@@ -130,6 +131,8 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
             />
             <CustomText
               style={{
+                fontFamily: POPPINS_REGULAR,
+                fontSize: FONT_SIZE_XXS,
                 marginTop: scale(10),
                 color: LightThemeColors.textLowContrast,
               }}

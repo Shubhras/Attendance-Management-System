@@ -48,7 +48,7 @@ const ProfileScreen = ({ navigation }) => {
     <CustomSafeAreaView
       statusBarBackgroundColor={Colors.primary}
       barStyle="light-content"
-      style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
+      style={[styles.mainWrapper, { backgroundColor: Colors.primary }]}
     >
        <Header
           back={true}
@@ -62,6 +62,7 @@ const ProfileScreen = ({ navigation }) => {
         overScrollMode="never"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
+         style={[styles.mainWrapper, { backgroundColor: Colors.white }]}
       >
         <View style={styles.profilePhotoWrapper}>
           <FastImage

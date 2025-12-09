@@ -13,12 +13,12 @@ import {
   STANDARD_SPACING,
 } from '../../config/Constants';
 import { scale } from 'react-native-size-matters';
+import { Colors } from '../../config/Colors';
 
 // Exporting style
 export default StyleSheet.create({
   mainWrapper: {
     flex: STANDARD_FLEX,
-
   },
   flateList: {
     marginTop: STANDARD_SPACING * 4
@@ -53,10 +53,38 @@ export default StyleSheet.create({
     fontSize: FONT_SIZE_XXS,
     lineHeight: scale(14)
   },
+  contentContainerStyleEmpty: {
+    flex: 1,
+    alignItems: 'center',
+  },
   contentContainerStyle: {
     paddingHorizontal: SCREEN_WIDTH * 0.05,
-    rowGap: scale(12),
-    paddingBottom: scale(12)
-  }
-
+    rowGap: scale(10),
+    paddingBottom: scale(10),
+  },
+  loadingContainer:{
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer:{
+    // flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+   imageContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: scale(100),
+    borderRadius: scale(50),
+  },
+  image: {
+    flex: 1,
+    aspectRatio: 1,
+    width: null,
+    height: null,
+  },
 });
