@@ -116,7 +116,7 @@ $subTitle = 'Update Employee Details';
                 @endif
                 <input type="file" name="fingerprint" class="form-control">
             </div>
-            <div class="col-md-6">
+            <!-- <div class="col-md-6">
                 <label class="form-label">Employee Type</label>
                 <select name="employee_type" class="form-select">
                     <option value="company" {{ $employee->employee_type == 'company' ? 'selected' : '' }}>Company
@@ -136,7 +136,29 @@ $subTitle = 'Update Employee Details';
                     </option>
                     @endforeach
                 </select>
-            </div>
+            </div> -->
+            <div class="col-md-6">
+    <label class="form-label">Employee Type</label>
+    <select name="employee_type" id="employee_type" class="form-select" required>
+        <option value="">Select employee type</option>
+        <option value="company" {{ $employee->employee_type == 'company' ? 'selected' : '' }}>Company</option>
+        <option value="contractor" {{ $employee->employee_type == 'contractor' ? 'selected' : '' }}>Contractor</option>
+    </select>
+</div>
+
+<div class="col-md-6" id="contractor_box" style="{{ $employee->employee_type == 'contractor' ? '' : 'display:none;' }}">
+    <label class="form-label">Contractor</label>
+    <select name="contractor_id" class="form-select">
+        <option value="">Select Contractor</option>
+        @foreach($contractors as $contractor)
+        <option value="{{ $contractor->id }}" 
+            {{ $employee->contractor_id == $contractor->id ? 'selected' : '' }}>
+            {{ $contractor->name }}
+        </option>
+        @endforeach
+    </select>
+</div>
+
             <div class="col-md-6">
                 <label class="form-label">Machine</label>
                 <select name="machine_id" class="form-select">
@@ -192,7 +214,7 @@ $subTitle = 'Update Employee Details';
 </div>
 @endsection
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
+<!-- <script>
 document.addEventListener('DOMContentLoaded', function() {
     const salaryType = document.getElementById('salaryType');
     const monthlyField = document.querySelector('.salary-monthly-field');
@@ -208,4 +230,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script> -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Salary toggle (already working)
+    const salaryType = document.getElementById('salaryType');
+    const monthlyField = document.querySelector('.salary-monthly-field');
+    const dailyField = document.querySelector('.salary-daily-field');
+
+    salaryType.addEventListener('change', function () {
+        monthlyField.style.display = (this.value === 'monthly') ? '' : 'none';
+        dailyField.style.display = (this.value === 'daily') ? '' : 'none';
+    });
+
+    // Employee Type toggle (new)
+    const empType = document.getElementById("employee_type");
+    const contractorBox = document.getElementById("contractor_box");
+
+    function toggleContractor() {
+        contractorBox.style.display = empType.value === "contractor" ? "block" : "none";
+    }
+
+    empType.addEventListener("change", toggleContractor);
+    toggleContractor(); // Run on page load
+});
 </script>
+

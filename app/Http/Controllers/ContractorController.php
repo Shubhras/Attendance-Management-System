@@ -76,16 +76,33 @@ public function store(Request $request)
     ]);
 
     // ✅ Create folder if missing
-    $photoPath = public_path('contractors_image/photos');
-    if (!file_exists($photoPath)) {
-        mkdir($photoPath, 0777, true);
-    }
+    // $photoPath = public_path('contractors_image/photos');
+    // if (!file_exists($photoPath)) {
+    //     mkdir($photoPath, 0777, true);
+    // }
 
-    // ✅ Save photo directly to public/contractors/photos
+    // // ✅ Save photo directly to public/contractors/photos
+    // if ($request->hasFile('self_photo')) {
+    //     $photo = $request->file('self_photo');
+    //     $photoName = uniqid() . '.' . $photo->getClientOriginalExtension();
+    //     $photo->move($photoPath, $photoName);
+    //     $data['self_photo'] = 'contractors_image/photos/' . $photoName;
+    // }
+    // ------------------------------------------------------------
+    // ✅ Save image using same clean mechanism as Machines module
+    // ------------------------------------------------------------
     if ($request->hasFile('self_photo')) {
+
+        $photoPath = public_path('contractors_image/photos');
+
+        if (!file_exists($photoPath)) {
+            mkdir($photoPath, 0777, true);
+        }
+
         $photo = $request->file('self_photo');
         $photoName = uniqid() . '.' . $photo->getClientOriginalExtension();
         $photo->move($photoPath, $photoName);
+
         $data['self_photo'] = 'contractors_image/photos/' . $photoName;
     }
 

@@ -23,4 +23,7 @@ class Attendance extends Model
     public function marker() {
         return $this->belongsTo(\App\Models\User::class, 'marked_by');
     }
+    public function getMarkedByUserAttribute() {
+    return $this->marker;
+}
 }

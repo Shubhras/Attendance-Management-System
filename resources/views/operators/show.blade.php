@@ -15,6 +15,6 @@
         @endif
     </p>
 
-    <a href="{{ route('operators.index') }}" class="btn btn-secondary mt-3">Back</a>
+    <a href="{{ route('operators.index') }}" class="btn btn-secondary mt-3" style="width:10%">Back</a>
 </div>
 @endsection

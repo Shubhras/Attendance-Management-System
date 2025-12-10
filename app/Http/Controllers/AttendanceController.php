@@ -108,7 +108,8 @@ public function index(Request $request)
         'status',
         'clock_in',
         'clock_out',
-        'date'
+        'date',
+        'marked_by'
     )->whereIn('employee_id', $employees->pluck('id'));
 
     switch ($range) {
@@ -157,31 +158,33 @@ public function storeSingle(Request $request)
     $request->validate([
         'employee_id' => 'required|exists:employees,id',
         'status'      => 'required|in:0,1,2',
-        'clock_in'    => 'nullable|date_format:H:i',
-        'clock_out'   => 'nullable|date_format:H:i',
+        'clock_in'    => 'nullable',   // allow any format
+        'clock_out'   => 'nullable',
         'date'        => 'required|date'
     ]);
 
     $selectedDate = $request->date;
 
-    // Build clock in/out full timestamps
+    // Normalize times to H:i:s
     $clockIn = $request->clock_in
-        ? $selectedDate . ' ' . $request->clock_in . ':00'
-        : now(); // default current timestamp
-
-    $clockOut = $request->clock_out
-        ? $selectedDate . ' ' . $request->clock_out . ':00'
+        ? date('H:i:s', strtotime($request->clock_in))
         : null;
 
-    // Set date column = clock in timestamp
-    $dateColumn = $clockIn;
+    $clockOut = $request->clock_out
+        ? date('H:i:s', strtotime($request->clock_out))
+        : null;
 
+    // Combine date + time for the datetime column
+    $clockInDateTime = $clockIn ? ($selectedDate . ' ' . $clockIn) : null;
+    $clockOutDateTime = $clockOut ? ($selectedDate . ' ' . $clockOut) : null;
+
+    // Save attendance
     Attendance::updateOrCreate(
         [
             'employee_id' => $request->employee_id,
+            'date'        => $selectedDate,  // unique for date + employee
         ],
         [
-            'date'      => $dateColumn,  // <— this fixes the issue
             'status'    => (int) $request->status,
             'clock_in'  => $clockIn,
             'clock_out' => $clockOut,
@@ -198,6 +201,7 @@ public function storeSingle(Request $request)
     return redirect()->route('attendance.index')
         ->with('success', 'Attendance marked successfully!');
 }
+
 
 
     /* ----------------------------
@@ -248,46 +252,41 @@ public function storeSingle(Request $request)
 ----------------------------- */
 public function saveBulk(Request $request)
 {
-    // ----------------------------
-    // Validate input
-    // ----------------------------
     $request->validate([
         'date' => 'required|date',
         'records' => 'required|array',
         'records.*.employee_id' => 'required|exists:employees,id',
-        'records.*.status' => 'required|in:0,1,2',   // updated for half-day
-        'records.*.clock_in' => 'nullable|date_format:H:i',
-        'records.*.clock_out' => 'nullable|date_format:H:i',
+        'records.*.status' => 'required|in:0,1,2',
+        'records.*.clock_in' => 'nullable',   // no strict format
+        'records.*.clock_out' => 'nullable',
     ]);
 
     DB::beginTransaction();
 
     try {
-        $selectedDate = $request->date; // ex: 2025-12-04
+        $selectedDate = $request->date;
 
         foreach ($request->records as $row) {
 
             $employeeId = $row['employee_id'];
             $status     = (int) $row['status'];
 
-            // Create full datetime
+            // Normalize time to H:i:s
             $clockIn = !empty($row['clock_in'])
-                ? $selectedDate . ' ' . $row['clock_in'] . ':00'
+                ? date('H:i:s', strtotime($row['clock_in']))
                 : null;
 
             $clockOut = !empty($row['clock_out'])
-                ? $selectedDate . ' ' . $row['clock_out'] . ':00'
+                ? date('H:i:s', strtotime($row['clock_out']))
                 : null;
 
-            // -----------------------------------------
-            // Check if attendance exists for same date
-            // -----------------------------------------
+            // Find existing attendance for that date
             $attendance = Attendance::where('employee_id', $employeeId)
                 ->whereDate('date', $selectedDate)
                 ->first();
 
             if ($attendance) {
-                // UPDATE existing attendance
+                // UPDATE existing
                 $attendance->update([
                     'status'    => $status,
                     'clock_in'  => $clockIn,
@@ -295,10 +294,10 @@ public function saveBulk(Request $request)
                     'marked_by' => auth()->id(),
                 ]);
             } else {
-                // CREATE new attendance
+                // CREATE new
                 Attendance::create([
                     'employee_id' => $employeeId,
-                    'date'        => now()->format('Y-m-d H:i:s'), // date + time saved
+                    'date'        => $selectedDate,
                     'status'      => $status,
                     'clock_in'    => $clockIn,
                     'clock_out'   => $clockOut,
@@ -306,9 +305,7 @@ public function saveBulk(Request $request)
                 ]);
             }
 
-            // -----------------------------------------
-            // Update Employee Table
-            // -----------------------------------------
+            // Update Employee table
             Employee::where('id', $employeeId)
                 ->update([
                     'attendance_status' => $status
@@ -323,6 +320,7 @@ public function saveBulk(Request $request)
         return back()->with('error', 'Failed to save: ' . $e->getMessage());
     }
 }
+
 
 
 

@@ -7,6 +7,7 @@ $subTitle = 'View Employee';
 @section('content')
 <div class="card radius-12 p-24">
     <h5 class="mb-3">Employee Details</h5>
+    <?php //echo"<pre>";print_r($contractors);die; ?>
     <div class="row g-3">
         <div class="col-md-4"><strong>Name:</strong> {{ $employee->name }}</div>
         <div class="col-md-4"><strong>Mobile:</strong> {{ $employee->mobile }}</div>
@@ -16,8 +17,11 @@ $subTitle = 'View Employee';
         <div class="col-md-4"><strong>Work Title:</strong> {{ $employee->employee_work_title ?? '-' }}</div>
         <div class="col-md-4"><strong>Gender:</strong> {{ ucfirst($employee->gender) ?? '-' }}</div>
         <div class="col-md-4"><strong>Employee Type:</strong> {{ ucfirst($employee->employee_type) }}</div>
-        <div class="col-md-4"><strong>Contractor:</strong> {{ $employee->contractor?->name ?? '-' }}</div>
-        <div class="col-md-4"><strong>Machine:</strong> {{ $employee->machine ?? '-' }}</div>
+        <div class="col-md-4">
+    <strong>Contractor:</strong> {{ $employee->contractor?->name ?? '-' }}
+</div>
+        <!-- <div class="col-md-4"><strong>Contractor:</strong> {{ $contractor->name ?? '-' }}</div> -->
+        <div class="col-md-4"><strong>Machine:</strong> {{ $employee->machineRelation?->name ?? 'N/A' }}</div>
         <!-- <div class="col-md-4"><strong>Salary (₹):</strong> {{ $employee->salary_monthly ?? '-' }}</div> -->
         {{-- ✅ Show Salary Type and Value --}}
         <div class="col-md-4">
@@ -38,13 +42,13 @@ $subTitle = 'View Employee';
             <span class="text-muted">No photo</span>
             @endif
         </div>
-        <div class="col-md-4"><strong>Fingerprint File:</strong><br>
+        <!-- <div class="col-md-4"><strong>Fingerprint File:</strong><br>
             @if($employee->fingerprint)
             <img src="{{ asset($employee->fingerprint) }}" width="100" class="rounded mt-2">
             @else
             <span class="text-muted">No photo</span>
             @endif
-        </div>
+        </div> -->
         <div class="col-md-4"><strong>Adhar File:</strong><br>
             @if($employee->aadhar_card)
             <img src="{{ asset($employee->aadhar_card) }}" width="100" class="rounded mt-2">

@@ -329,7 +329,7 @@ public function markAttendance(Request $request)
     }
 
     // -------------------------
-    // Build shift times
+    // Shift times
     // -------------------------
     $shiftStart = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_in_time);
     $shiftEnd   = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_out_time);
@@ -339,61 +339,83 @@ public function markAttendance(Request $request)
     // Detect night shift
     if ($shiftEnd->lt($shiftStart)) {
         $isNightShift = true;
-        $shiftEnd->addDay();                // night shift ends next day
+        $shiftEnd->addDay();
     }
 
-    // -------------------------
-    // Correct ATTENDANCE DATE on night shift
-    // -------------------------
+    // Fix attendance date for night shift
     if ($isNightShift && $scanDateTime->lt($shiftStart)) {
-        // Example:
-        // Shift = 20:00 (Dec 5)
-        // Scan = 05:00 (Dec 6)
-        // Real attendance date = Dec 5
         $attendanceDate = $shiftStart->copy()->subDay()->format('Y-m-d');
-        $shiftStart->subDay();  // shift start moves to previous day
+        $shiftStart->subDay();
     } else {
         $attendanceDate = $scanDateTime->format('Y-m-d');
     }
 
-    // -------------------------
-    // Determine late / present / half / leave
-    // -------------------------
+    // ---------------------------------------------------------
+    // MARK CLOCK-IN / CLOCK-OUT
+    // ---------------------------------------------------------
+    $attendance = Attendance::firstOrNew([
+        'employee_id' => $employee->id,
+        'date'        => $attendanceDate,
+    ]);
 
-    if ($scanDateTime->lt($shiftStart)) {
-        // too early (e.g., 5 AM for morning shift)
-        $attendanceStatus = 0; // Leave
-        $diffHours = 0;
+    // store clock-in first time
+    if (!$attendance->exists || !$attendance->clock_in) {
+        $attendance->clock_in = $scanDateTime->format('H:i:s');
+        $attendance->clock_out = null;
     } else {
-        $diffHours = $shiftStart->diffInHours($scanDateTime);
+        $attendance->clock_out = $scanDateTime->format('H:i:s');
+    }
 
-        if ($diffHours <= 2) {
+    // ---------------------------------------------------------
+    // If only clock-in happened → calculate based on late
+    // ---------------------------------------------------------
+    $clockIn = Carbon::parse($attendanceDate . ' ' . $attendance->clock_in);
+    $lateMinutes = $clockIn->diffInMinutes($shiftStart);
+    $lateHours = $lateMinutes / 60;
+
+    // ---------------------------------------------------------
+    // If clock-out exists → calculate total worked hours
+    // ---------------------------------------------------------
+    if ($attendance->clock_out) {
+        $clockOut = Carbon::parse($attendanceDate . ' ' . $attendance->clock_out);
+        $workedHours = $clockIn->diffInHours($clockOut, false);
+    } else {
+        $workedHours = 0;
+    }
+
+    // ---------------------------------------------------------
+    // FINAL ATTENDANCE RULES
+    // ---------------------------------------------------------
+
+    // CASE 1: Only clock-IN (late logic)
+    if (!$attendance->clock_out) {
+
+        if ($lateHours <= 1) {
             $attendanceStatus = 1; // Present
-        } elseif ($diffHours <= 3) {
+        } elseif ($lateHours <= 4) {
+            $attendanceStatus = 2; // Half Day
+        } else {
+            $attendanceStatus = 0; // Leave
+        }
+
+    } else {
+        // CASE 2: FULL-IN + OUT (work hours logic)
+
+        if ($workedHours >= 6) {
+            $attendanceStatus = 1; // Present
+        } elseif ($workedHours >= 4) {
             $attendanceStatus = 2; // Half Day
         } else {
             $attendanceStatus = 0; // Leave
         }
     }
 
-    // -------------------------
-    // Save attendance with correct DATE
-    // -------------------------
-    $attendance = Attendance::firstOrNew([
-        'employee_id' => $employee->id,
-        'date'        => $attendanceDate,
-    ]);
-
-    if (!$attendance->exists || !$attendance->clock_in) {
-        $attendance->clock_in = $scanDateTime->format('H:i');
-        $attendance->clock_out = null;
-    } else {
-        $attendance->clock_out = $scanDateTime->format('H:i');
-    }
-
-    $attendance->status       = $attendanceStatus;
-    $attendance->scan_status  = $request->status ? 1 : 0;
-    $attendance->marked_by    = auth()->id();
+    // ---------------------------------------------------------
+    // Save data
+    // ---------------------------------------------------------
+    $attendance->status      = $attendanceStatus;
+    $attendance->scan_status = $request->status ? 1 : 0;
+    $attendance->marked_by   = auth()->id();
     $attendance->save();
 
     Employee::where('id', $employee->id)
@@ -403,11 +425,124 @@ public function markAttendance(Request $request)
         'status'                  => true,
         'message'                 => 'Attendance marked successfully',
         'attendance_date_used'    => $attendanceDate,
-        'difference_hours'        => $diffHours,
+        'late_hours'              => $lateHours,
+        'worked_hours'            => $workedHours,
         'final_attendance_status' => $attendanceStatus,
         'data'                    => $attendance
     ]);
 }
+
+// Working for shift 8 dec
+// public function markAttendance(Request $request)
+// {
+//     $scanDateTime = $request->date
+//         ? Carbon::parse($request->date)
+//         : now();
+
+//     $validator = Validator::make($request->all(), [
+//         'employee_id' => 'required|exists:employees,id',
+//         'date'        => 'nullable|date',
+//         'status'      => 'required|boolean',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation error',
+//             'errors'  => $validator->errors()
+//         ], 422);
+//     }
+
+//     $employee = Employee::find($request->employee_id);
+//     $shift = Shift::find($employee->shift_id);
+
+//     if (!$shift) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Shift not assigned to this employee'
+//         ], 400);
+//     }
+
+//     // -------------------------
+//     // Build shift times
+//     // -------------------------
+//     $shiftStart = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_in_time);
+//     $shiftEnd   = Carbon::parse($scanDateTime->format('Y-m-d') . ' ' . $shift->clock_out_time);
+
+//     $isNightShift = false;
+
+//     // Detect night shift
+//     if ($shiftEnd->lt($shiftStart)) {
+//         $isNightShift = true;
+//         $shiftEnd->addDay();                // night shift ends next day
+//     }
+
+//     // -------------------------
+//     // Correct ATTENDANCE DATE on night shift
+//     // -------------------------
+//     if ($isNightShift && $scanDateTime->lt($shiftStart)) {
+//         // Example:
+//         // Shift = 20:00 (Dec 5)
+//         // Scan = 05:00 (Dec 6)
+//         // Real attendance date = Dec 5
+//         $attendanceDate = $shiftStart->copy()->subDay()->format('Y-m-d');
+//         $shiftStart->subDay();  // shift start moves to previous day
+//     } else {
+//         $attendanceDate = $scanDateTime->format('Y-m-d');
+//     }
+
+//     // -------------------------
+//     // Determine late / present / half / leave
+//     // -------------------------
+
+//     if ($scanDateTime->lt($shiftStart)) {
+//         // too early (e.g., 5 AM for morning shift)
+//         $attendanceStatus = 0; // Leave
+//         $diffHours = 0;
+//     } else {
+//         $diffHours = $shiftStart->diffInHours($scanDateTime);
+
+//         if ($diffHours <= 2) {
+//             $attendanceStatus = 1; // Present
+//         } elseif ($diffHours <= 3) {
+//             $attendanceStatus = 2; // Half Day
+//         } else {
+//             $attendanceStatus = 0; // Leave
+//         }
+//     }
+
+//     // -------------------------
+//     // Save attendance with correct DATE
+//     // -------------------------
+//     $attendance = Attendance::firstOrNew([
+//         'employee_id' => $employee->id,
+//         'date'        => $attendanceDate,
+//     ]);
+
+//     if (!$attendance->exists || !$attendance->clock_in) {
+//         $attendance->clock_in = $scanDateTime->format('H:i');
+//         $attendance->clock_out = null;
+//     } else {
+//         $attendance->clock_out = $scanDateTime->format('H:i');
+//     }
+
+//     $attendance->status       = $attendanceStatus;
+//     $attendance->scan_status  = $request->status ? 1 : 0;
+//     $attendance->marked_by    = auth()->id();
+//     $attendance->save();
+
+//     Employee::where('id', $employee->id)
+//         ->update(['attendance_status' => $attendanceStatus]);
+
+//     return response()->json([
+//         'status'                  => true,
+//         'message'                 => 'Attendance marked successfully',
+//         'attendance_date_used'    => $attendanceDate,
+//         'difference_hours'        => $diffHours,
+//         'final_attendance_status' => $attendanceStatus,
+//         'data'                    => $attendance
+//     ]);
+// }
 
 
 

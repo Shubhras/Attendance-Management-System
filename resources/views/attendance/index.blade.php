@@ -110,6 +110,7 @@ $subTitle = 'Manage Attendance';
                             <th>#</th>
                             <th>Employee</th>
                             <th>Emp Code</th>
+                            <th>Marked By</th>
                             <th>Shift</th>
                             <th>Mobile</th>
                             <th>Status</th>
@@ -143,6 +144,8 @@ $subTitle = 'Manage Attendance';
                             <td>{{ $employees->firstItem() + $index }}</td>
                             <td>{{ $emp->name }}</td>
                             <td>{{ $emp->employee_code }}</td>
+                            <td>{{ $att?->marker?->name ?? '-' }}</td>
+                            <!-- <td>{{ $att?->markedByUser?->name ?? '-' }}</td> -->
                             <td>{{ $emp->shift?->shift_name ?? '-' }}</td>
                             <td>{{ $emp->mobile }}</td>
                             <td>
@@ -154,7 +157,7 @@ $subTitle = 'Manage Attendance';
                                 <select name="records[{{ $index }}][status]" class="form-select form-select-sm">
                                     <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
                                     <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
-                                    <option value="0" {{ $status == 2 ? 'selected' : '' }}>Half day</option>
+                                    <option value="2" {{ $status == 2 ? 'selected' : '' }}>Half day</option>
                                 </select>
                                 <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
                                     <option value="1" {{ $status === '1' ? 'selected' : '' }}>Present

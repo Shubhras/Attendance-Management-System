@@ -186,10 +186,7 @@
                         <a href="{{ route('dropdown') }}"><i
                                 class="ri-circle-fill circle-icon text-lilac-600 w-auto"></i> Dropdown</a>
                     </li>
-                    <li>
-                        <a href="{{ route('alert') }}"><i
-                                class="ri-circle-fill circle-icon text-warning-main w-auto"></i> Alerts</a>
-                    </li>
+         
                     <li>
                         <a href="{{ route('card') }}"><i class="ri-circle-fill circle-icon text-danger-main w-auto"></i>
                             Card</a>

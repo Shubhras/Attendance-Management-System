@@ -157,10 +157,18 @@ class OperatorController extends Controller
     public function index(Request $request)
     {
         // Paginated employees for the table (show all employees and indicate is_operator)
-        $employees = Employee::with('user')
-            ->orderBy('name')
-            ->paginate($request->get('per_page', 10));
-
+        // $employees = Employee::with('user')
+        //     ->orderBy('name')
+        //     ->paginate($request->get('per_page', 10));
+    $employees = Employee::with('user')
+        ->when($request->search, function($query) use ($request){
+            $query->where('name', 'like', '%'.$request->search.'%')
+                  ->orWhere('mobile', 'like', '%'.$request->search.'%');
+        })
+        ->orderBy('name')
+        ->paginate($request->get('per_page', 10));
+        //         echo"<pre>";
+        // print_r($employees);die;
         // For the dropdown: only employees that are NOT operators
         $allEmployees = Employee::where('is_operator', false)
             ->orderBy('name')
@@ -168,7 +176,11 @@ class OperatorController extends Controller
 
         return view('operators.index', compact('employees', 'allEmployees'));
     }
-
+public function show($uuid)
+{
+    $employee = Employee::with('user')->where('uuid', $uuid)->firstOrFail();
+    return view('operators.show', compact('employee'));
+}
     /**
      * Store a new operator (create User + link to Employee).
      */
@@ -189,7 +201,8 @@ class OperatorController extends Controller
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
-
+// echo"<pre>";
+// print_r($user);die;
         // Save correct user id (users.id)
         $employee->update([
             'is_operator' => true,
@@ -198,6 +211,21 @@ class OperatorController extends Controller
 
         return redirect()->route('operators.index')->with('success', 'Operator assigned successfully.');
     }
+public function updatePassword(Request $request, $userId)
+{
+    $request->validate([
+        'email'    => 'required|email|unique:users,email,' . $userId,
+        'password' => 'required|min:6|confirmed',
+    ]);
+
+    User::where('id', $userId)->update([
+        'email'    => $request->email,
+        'password' => bcrypt($request->password),
+    ]);
+
+    return back()->with('success', 'Password updated successfully');
+}
+
 
     /**
      * Remove operator: delete created user (optional) and unlink from employee.

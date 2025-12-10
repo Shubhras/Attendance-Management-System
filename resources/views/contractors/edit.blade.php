@@ -101,7 +101,8 @@
                     <input type="file" name="self_photo" accept="image/*" class="form-control radius-8">
                     @if($contractor->self_photo)
                         <div class="mt-10">
-                            <img src="{{ asset('storage/'.$contractor->self_photo) }}" alt="photo" style="max-height:120px;border-radius:8px;">
+                            <img src="{{ asset($contractor->self_photo) }}" width="100" class="rounded">
+                            <!-- <img src="{{ asset('$contractor->self_photo') }}" alt="photo" style="max-height:120px;border-radius:8px;"> -->
                         </div>
                     @endif
                 </div>

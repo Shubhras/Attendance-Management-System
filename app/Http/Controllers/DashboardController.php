@@ -3,14 +3,42 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use DB;
 class DashboardController extends Controller
 {
-    public function index()
+    // public function index()
+    // {
+    //     return view('dashboard/index');
+    // }
+     public function index()
     {
-        return view('dashboard/index');
+$salarySummary = DB::table('salary_payments')
+    ->select('month', DB::raw('SUM(net_amount) as total_salary'))
+    ->groupBy('month')
+    ->orderBy('month', 'ASC')
+    ->limit(6)
+    ->get();
+
+
+    // Attendance Summary (today)
+    $today = date('Y-m-d');
+
+    $attendanceSummary = DB::table('attendances')
+        ->selectRaw("
+            SUM(CASE WHEN status = 1 THEN 1 END) as present,
+            SUM(CASE WHEN status = 0 THEN 1 END) as absent,
+            SUM(CASE WHEN status = 2 THEN 1 END) as halfday
+        ")
+        ->whereDate('date', $today)
+        ->first();
+
+    // Revenue / Expense (dummy data / you can replace)
+    $revenue = [20000, 25000, 22000, 27000, 30000, 32000];
+    $expense = [10000, 12000, 15000, 16000, 17000, 18000];
+
+    return view('dashboard.index', compact('salarySummary', 'attendanceSummary', 'revenue', 'expense'));
+        // return view('dashboard/index5');
     }
-    
     public function index2()
     {
         return view('dashboard/index2');
@@ -28,7 +56,32 @@ class DashboardController extends Controller
     
     public function index5()
     {
-        return view('dashboard/index5');
+$salarySummary = DB::table('salary_payments')
+    ->select('month', DB::raw('SUM(net_amount) as total_salary'))
+    ->groupBy('month')
+    ->orderBy('month', 'ASC')
+    ->limit(6)
+    ->get();
+
+
+    // Attendance Summary (today)
+    $today = date('Y-m-d');
+
+    $attendanceSummary = DB::table('attendances')
+        ->selectRaw("
+            SUM(CASE WHEN status = 1 THEN 1 END) as present,
+            SUM(CASE WHEN status = 0 THEN 1 END) as absent,
+            SUM(CASE WHEN status = 2 THEN 1 END) as halfday
+        ")
+        ->whereDate('date', $today)
+        ->first();
+
+    // Revenue / Expense (dummy data / you can replace)
+    $revenue = [20000, 25000, 22000, 27000, 30000, 32000];
+    $expense = [10000, 12000, 15000, 16000, 17000, 18000];
+
+    return view('dashboard.index5', compact('salarySummary', 'attendanceSummary', 'revenue', 'expense'));
+        // return view('dashboard/index5');
     }
     
     public function index6()

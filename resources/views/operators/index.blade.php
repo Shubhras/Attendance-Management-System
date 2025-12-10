@@ -86,6 +86,7 @@
                 </thead>
                 <tbody>
                     @forelse($employees as $index => $employee)
+                    <?php //echo"<pre>";print_r($employee);die; ?>
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-10">
@@ -107,28 +108,58 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <div class="d-flex align-items-center gap-10 justify-content-center">
-                                    @if(!$employee->is_operator)
-                                        <button type="button"
-                                            class="bg-primary-focus text-primary-600 bg-hover-primary-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                                            data-bs-toggle="modal" data-bs-target="#assignOperatorModal"
-                                            data-employee-id="{{ $employee->id }}"
-                                            data-employee-name="{{ $employee->name }}">
-                                            <iconify-icon icon="mdi:account-plus" class="menu-icon"></iconify-icon>
-                                        </button>
-                                    @else
-                                        <form action="{{ route('operators.destroy', $employee->uuid) }}" method="POST" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                                                onclick="return confirm('Remove this operator?')">
-                                                <iconify-icon icon="mdi:account-remove" class="menu-icon"></iconify-icon>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
+    <div class="d-flex align-items-center gap-10 justify-content-center">
+
+        @if(!$employee->is_operator)
+            <!-- Assign Operator Button -->
+            <button type="button"
+                class="bg-primary-focus text-primary-600 bg-hover-primary-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                data-bs-toggle="modal" data-bs-target="#assignOperatorModal"
+                data-employee-id="{{ $employee->id }}"
+                data-employee-name="{{ $employee->name }}">
+                <iconify-icon icon="mdi:account-plus" class="menu-icon"></iconify-icon>
+            </button>
+        @else
+            {{-- View Operator --}}
+            <a href="{{ route('operators.show', $employee->uuid) }}"
+               class="bg-info-focus text-info-600 bg-hover-info-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+               title="View Operator">
+                <iconify-icon icon="mdi:eye-outline" class="menu-icon"></iconify-icon>
+            </a>
+
+            {{-- Change Password --}}
+            @if($employee->user)
+                <button type="button"
+                    class="bg-warning-focus text-warning-600 bg-hover-warning-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                    onclick="openChangePasswordModal('{{ $employee->user->id }}', '{{ $employee->user->email }}')"
+                    title="Change Password">
+                    <iconify-icon icon="mdi:key-variant"></iconify-icon>
+                </button>
+            @else
+                <button type="button"
+                    class="bg-secondary text-dark w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                    disabled
+                    title="This employee has no operator account created">
+                    <iconify-icon icon="mdi:key-variant"></iconify-icon>
+                </button>
+            @endif
+
+            {{-- Remove Operator --}}
+            <form action="{{ route('operators.destroy', $employee->uuid) }}" method="POST" style="display:inline;">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                    class="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                    onclick="return confirm('Remove this operator?')"
+                    title="Remove Operator">
+                    <iconify-icon icon="mdi:account-remove"></iconify-icon>
+                </button>
+            </form>
+        @endif
+
+    </div>
+</td>
+
                         </tr>
                     @empty
                         <tr>
@@ -191,6 +222,43 @@
         </div>
     </div>
 </div>
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content radius-16 bg-base">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5">Change Operator Password</h1>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form method="POST" action="" id="changePasswordForm">
+                @csrf
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="text" name="email" class="form-control" id="operatorEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- End Modal -->
 
 @endsection
@@ -211,5 +279,18 @@
             }
         });
     });
+</script>
+<script>
+    function openChangePasswordModal(userId, email) {
+    let url = "/operators/update-password/" + userId;
+    document.getElementById('changePasswordForm').action = url;
+
+    // Set email inside modal
+    document.getElementById('operatorEmail').value = email;
+
+    var modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    modal.show();
+}
+
 </script>
 @endsection

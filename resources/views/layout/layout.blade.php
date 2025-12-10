@@ -31,7 +31,10 @@
     </main>
 
     <!-- ..::  scripts  start ::.. -->
-    <x-script  script='{!! isset($script) ? $script : "" !!}' />
+    <!-- <x-script  script='{!! isset($script) ? $script : "" !!}' /> -->
+       <!-- Scripts -->
+    <script src="{{ asset('js/apexcharts.min.js') }}"></script>
+    @yield('scripts')
     <!-- ..::  scripts  end ::.. -->
 
 </body>

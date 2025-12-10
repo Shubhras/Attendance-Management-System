@@ -275,12 +275,22 @@ use Carbon\Carbon;
         return redirect()->route('employees-get.index')->with('success', 'Employee updated successfully!');
     }
 
-        public function show(Employee $employee)
-        {
-            $contractors = Contractor::orderBy('name')->get();
-            return view('employees-get.show', compact('employee', 'contractors'));
-        }
+        // public function show(Employee $employee)
+        // {
+        //     //  $employee->load(['machine', 'contractor']);
+        //     $employees = Machine::orderBy('name')->get();
+        //     $contractors = Contractor::orderBy('name')->get();
+        //     // echo"<pre>";print_r($employees);die;
+        //     return view('employees-get.show', compact('employee','employees', 'contractors'));
+        // }
+public function show(Employee $employee)
+{
+    $employee->load(['machine', 'contractor']); // <-- IMPORTANT
 
+    return view('employees-get.show', [
+        'employee' => $employee,
+    ]);
+}
         public function destroy(Employee $employee)
         {
             $employee->delete();

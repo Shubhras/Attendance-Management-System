@@ -227,6 +227,7 @@ Route::post('/signin', [AuthenticationController::class, 'login'])->name('login.
 Route::post('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
 Route::middleware(['web', 'auth', 'role:admin'])->group(function () {
+    
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
 
     Route::resource('contractors', ContractorController::class);
@@ -266,6 +267,11 @@ Route::get('/attendance-summary', [AttendanceController::class, 'summary'])
     // Route::get('/attendance/list', [AttendanceController::class,'list']);
     // Route::get('/attendance/export/employee/{employee_id}', [AttendanceController::class,'exportEmployeePdf']);
     // Route::get('/attendance/export/all', [AttendanceController::class,'exportAllPdf']);
+    // Route::post('/operators/password/{id}', [OperatorController::class, 'updatePassword'])
+    //     ->name('operators.updatePassword');
+    Route::post('/operators/update-password/{userId}', [OperatorController::class, 'updatePassword'])
+     ->name('operators.updatePassword');
+
 });
 
 //     Route::resource('contractors', ContractorController::class);

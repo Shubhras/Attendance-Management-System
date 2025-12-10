@@ -101,7 +101,13 @@ $subTitle = 'Manage Employees';
                         <td>{{ ucfirst($employee->gender) }}</td>
                         <td>{{ ucfirst($employee->employee_type) }}</td>
                         <td>{{ $employee->contractor?->name ?? '-' }}</td>
-                        <td>{{ $employee->machine ?? '-' }}</td>
+                        <td>                        @php
+                            $machineName = $machine->firstWhere('id', $employee->machine_id)?->name ?? 'Unassigned';
+                        @endphp
+                        {{ $machineName }}
+                        </td>
+                        <!-- <td>{{ $employee->machine->name ?? '-' }}</td> -->
+                        <!-- <td>{{ $employee->machine ?? '-' }}</td> -->
                         <td>
                             @if($employee->salary_type === 'daily')
                             ₹ {{ number_format($employee->salary_daily, 2) }} <small class="text-muted">/ day</small>
@@ -228,7 +234,27 @@ $subTitle = 'Manage Employees';
                             <label class="form-label">Fingerprint</label>
                             <input type="file" name="fingerprint" class="form-control">
                         </div> -->
+                        <!-- Employee Type & Contractor -->
                         <div class="col-md-6">
+                            <label class="form-label">Employee Type</label>
+                            <select name="employee_type" id="employee_type" class="form-select" required>
+                                <option value="">Select employee type</option>
+                                <option value="company">Company</option>
+                                <option value="contractor">Contractor</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" id="contractor_box" style="display:none;">
+                            <label class="form-label">Contractor</label>
+                            <select name="contractor_id" class="form-select">
+                                <option value="">Select contractor</option>
+                                @foreach($contractors as $contractor)
+                                    <option value="{{ $contractor->id }}">{{ $contractor->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- <div class="col-md-6">
                             <label class="form-label">Employee Type</label>
                             <select name="employee_type" class="form-select" required>
                                 <option value="">Select employee type</option>
@@ -244,7 +270,7 @@ $subTitle = 'Manage Employees';
                                 <option value="{{ $contractor->id }}">{{ $contractor->name }}</option>
                                 @endforeach
                             </select>
-                        </div>
+                        </div> -->
                         <div class="col-md-6">
                             <!-- <label class="form-label">Machine</label>
                             <input type="text" name="machine" class="form-control" placeholder="Enter assigned machine"> -->
@@ -361,4 +387,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const employeeType = document.getElementById("employee_type");
+    const contractorDiv = document.getElementById("contractor_box");
+
+    function toggleContractor() {
+        if (employeeType.value === "contractor") {
+            contractorDiv.style.display = "block";
+        } else {
+            contractorDiv.style.display = "none";
+        }
+    }
+
+    employeeType.addEventListener("change", toggleContractor);
+    toggleContractor(); // initial load
+});
+</script>
+
 @endsection

@@ -26,6 +26,7 @@ class Employee extends Model
         'fingerprint_template_data',
         'contractor_id',
         //'machine',
+        'user_id',
         'machine_id',
         'shift_id',
         'salary_type',
@@ -49,6 +50,7 @@ class Employee extends Model
         'salary_monthly' => 'decimal:2',
         'salary_daily' => 'decimal:2',
         'fingerprint_template_data' => 'array',
+         'machine_id' => 'integer',
     ];
 
     // ✅ Use UUID for route model binding
@@ -75,9 +77,9 @@ public function shift()
     {
         return $this->belongsTo(User::class, 'deleted_by');
     }
-    public function user() {
-        return $this->belongsTo(User::class);
-    }
+    // public function user() {
+    //     return $this->belongsTo(User::class);
+    // }
     // ✅ Auto-set uuid, created_by, deleted_by
     protected static function booted()
     {
@@ -116,8 +118,20 @@ public function shift()
     {
         return $value ? url($value) : null;
     }
-        public function machine()
-    {
-        return $this->belongsTo(Machine::class, 'machine_id');
-    }
+// public function machine()
+// {
+//     return $this->belongsTo(Machine::class, 'machine_id');
+// }
+public function machine()
+{
+    return $this->belongsTo(Machine::class, 'machine_id')->withTrashed();
+}
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id', 'id');
+}
+public function machineRelation()
+{
+    return $this->belongsTo(Machine::class, 'machine_id', 'id')->withTrashed();
+}
 }

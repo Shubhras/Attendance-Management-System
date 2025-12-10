@@ -278,7 +278,6 @@ $subTitle = 'Contractors';
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    alert();
     var deleteModal = document.getElementById('deleteModal');
     deleteModal.addEventListener('show.bs.modal', function(event) {
         var button = event.relatedTarget;
