@@ -107,11 +107,72 @@
                                     <span class="bg-warning-focus text-warning-600 border border-warning-main px-24 py-4 radius-4 fw-medium text-sm">Not Assigned</span>
                                 @endif
                             </td>
+                            <!-- <td class="text-center">
+                                <div class="d-flex align-items-center gap-10 justify-content-center">
+
+                                    @if(!$employee->is_operator)
+                                        
+                                        <button type="button"
+                                            class="bg-primary-focus text-primary-600 bg-hover-primary-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                            data-bs-toggle="modal" data-bs-target="#assignOperatorModal"
+                                            data-employee-id="{{ $employee->id }}"
+                                            data-employee-name="{{ $employee->name }}">
+                                            <iconify-icon icon="mdi:account-plus" class="menu-icon"></iconify-icon>
+                                        </button>
+                                    @else
+                                        {{-- View Operator --}}
+                                        <a href="{{ route('operators.show', $employee->uuid) }}"
+                                        class="bg-info-focus text-info-600 bg-hover-info-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                        title="View Operator">
+                                            <iconify-icon icon="mdi:eye-outline" class="menu-icon"></iconify-icon>
+                                        </a>
+
+                                        {{-- Change Password --}}
+                                        @if($employee->user)
+                                            <button type="button"
+                                                class="bg-warning-focus text-warning-600 bg-hover-warning-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                onclick="openChangePasswordModal('{{ $employee->user->id }}', '{{ $employee->user->email }}')"
+                                                title="Change Password">
+                                                <iconify-icon icon="mdi:key-variant"></iconify-icon>
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                class="bg-secondary text-dark w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                disabled
+                                                title="This employee has no operator account created">
+                                                <iconify-icon icon="mdi:key-variant"></iconify-icon>
+                                            </button>
+                                        @endif
+
+                                        {{-- Remove Operator --}}
+                                        <form action="{{ route('operators.destroy', $employee->uuid) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                                onclick="return confirm('Remove this operator?')"
+                                                title="Remove Operator">
+                                                <iconify-icon icon="mdi:account-remove"></iconify-icon>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                </div>
+                            </td> -->
                             <td class="text-center">
+    {{-- Status Badge --}}
+    @if($employee->is_operator)
+        <span class="badge bg-success mb-2 d-inline-block">Operator</span>
+    @elseif($employee->is_hr)
+        <span class="badge bg-info mb-2 d-inline-block">HR</span>
+    @else
+        <span class="badge bg-warning mb-2 d-inline-block">Not Assigned</span>
+    @endif
+
     <div class="d-flex align-items-center gap-10 justify-content-center">
 
-        @if(!$employee->is_operator)
-            <!-- Assign Operator Button -->
+        @if(!$employee->is_operator && !$employee->is_hr)
+            <!-- Assign Operator/HR Button -->
             <button type="button"
                 class="bg-primary-focus text-primary-600 bg-hover-primary-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                 data-bs-toggle="modal" data-bs-target="#assignOperatorModal"
@@ -120,10 +181,10 @@
                 <iconify-icon icon="mdi:account-plus" class="menu-icon"></iconify-icon>
             </button>
         @else
-            {{-- View Operator --}}
+            {{-- View Operator/HR --}}
             <a href="{{ route('operators.show', $employee->uuid) }}"
                class="bg-info-focus text-info-600 bg-hover-info-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-               title="View Operator">
+               title="View Operator/HR">
                 <iconify-icon icon="mdi:eye-outline" class="menu-icon"></iconify-icon>
             </a>
 
@@ -144,14 +205,14 @@
                 </button>
             @endif
 
-            {{-- Remove Operator --}}
+            {{-- Remove Operator/HR --}}
             <form action="{{ route('operators.destroy', $employee->uuid) }}" method="POST" style="display:inline;">
                 @csrf
                 @method('DELETE')
                 <button type="submit"
                     class="bg-danger-focus text-danger-600 bg-hover-danger-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
-                    onclick="return confirm('Remove this operator?')"
-                    title="Remove Operator">
+                    onclick="return confirm('Remove this role?')"
+                    title="Remove Operator/HR">
                     <iconify-icon icon="mdi:account-remove"></iconify-icon>
                 </button>
             </form>
@@ -159,6 +220,7 @@
 
     </div>
 </td>
+
 
                         </tr>
                     @empty
@@ -201,7 +263,14 @@
                                 @endforeach
                             </select>
                         </div>
-
+                        <div class="col-md-6 mb-20">
+                            <label class="form-label fw-semibold text-primary-light text-sm mb-8">Select Role</label>
+                            <select name="role" class="form-select radius-8" required>
+                                <option value="">Select Role</option>
+                                <option value="operator">Operator</option>
+                                <option value="hr">HR</option>
+                            </select>
+                        </div>
                         <div class="col-md-6 mb-20">
                             <label class="form-label fw-semibold text-primary-light text-sm mb-8">Email</label>
                             <input type="email" name="email" class="form-control radius-8" placeholder="Enter Email" required>

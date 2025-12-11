@@ -547,31 +547,116 @@ public function exportAll(Request $request)
 
 //     return view('attendance.summary', compact('employees', 'month', 'daysInMonth', 'attendanceMap'));
 // }
+
+// working code 10dec
+// public function summary(Request $request)
+// {
+//     $month = $request->get('month', Carbon::now()->format('Y-m'));
+
+//     // Prepare start and end dates for selected month
+//     $start = Carbon::parse($month . '-01')->startOfMonth();
+//     $end   = Carbon::parse($month . '-01')->endOfMonth();
+
+//     $daysInMonth = $start->daysInMonth;
+
+//     // Get employees list
+//     $employees = Employee::orderBy('name')->get();
+
+//     // Fetch all attendance for the month (optimized)
+//     $attendances = Attendance::whereBetween('date', [$start, $end])->get();
+
+//     // Prepare attendance map (employee_id → day → status)
+//     $attendanceMap = [];
+
+//     foreach ($attendances as $a) {
+//         $day = Carbon::parse($a->date)->day;  // returns integer day (1–31)
+//         $attendanceMap[$a->employee_id][$day] = (int) $a->status; // force integer
+//     }
+
+//     return view('attendance.summary', compact('employees', 'month', 'daysInMonth', 'attendanceMap'));
+// }
 public function summary(Request $request)
 {
+    
     $month = $request->get('month', Carbon::now()->format('Y-m'));
-
-    // Prepare start and end dates for selected month
+    $employeeId = $request->get('employee_id');
+    $searchCode = $request->get('search_code');
     $start = Carbon::parse($month . '-01')->startOfMonth();
     $end   = Carbon::parse($month . '-01')->endOfMonth();
-
     $daysInMonth = $start->daysInMonth;
 
-    // Get employees list
-    $employees = Employee::orderBy('name')->get();
+    // Employees
+    $empQuery = Employee::orderBy('name');
 
-    // Fetch all attendance for the month (optimized)
-    $attendances = Attendance::whereBetween('date', [$start, $end])->get();
+    if ($employeeId) {
+        $empQuery->where('id', $employeeId);
+    }
+       // Add search by employee code
+    if ($searchCode) {
+        $empQuery->where('employee_code', 'like', '%' . $searchCode . '%');
+    }
+    $employees = $empQuery->get();
 
-    // Prepare attendance map (employee_id → day → status)
+    // Attendance
+    $attQuery = Attendance::whereBetween('date', [$start, $end]);
+    if ($employeeId) {
+        $attQuery->where('employee_id', $employeeId);
+    }
+    $attendances = $attQuery->get();
+
+    // Attendance Map
     $attendanceMap = [];
 
     foreach ($attendances as $a) {
-        $day = Carbon::parse($a->date)->day;  // returns integer day (1–31)
-        $attendanceMap[$a->employee_id][$day] = (int) $a->status; // force integer
+        $day = Carbon::parse($a->date)->day;
+        $hoursFormatted = null;
+
+        if (!empty($a->clock_in) && !empty($a->clock_out) && $a->clock_in != "00:00:00" && $a->clock_out != "00:00:00") {
+
+            // Parse clock_in
+            $in = str_contains($a->clock_in, '-') ?
+                : Carbon::parse($a->clock_in);
+
+            // Parse clock_out
+            $out = str_contains($a->clock_out, '-') ?
+                : Carbon::parse($a->clock_out);
+
+            // Night shift fix
+            if ($out->lt($in)) {
+                $out->addDay();
+            }
+
+            $totalMins = $in->diffInMinutes($out);
+            if ($totalMins < 0) $totalMins = 0;
+
+            $h = floor($totalMins / 60);
+            $m = $totalMins % 60;
+
+            // Correct format: 03h 42min
+            $hoursFormatted = sprintf("%02dh %02dmin", $h, $m);
+            // print_r($hoursFormatted);die;
+        }
+
+        $attendanceMap[$a->employee_id][$day] = [
+            'status' => (int)$a->status,
+            'hours'  => $hoursFormatted
+        ];
     }
 
-    return view('attendance.summary', compact('employees', 'month', 'daysInMonth', 'attendanceMap'));
+    return view('attendance.summary', compact(
+        'employees',
+        'month',
+        'daysInMonth',
+        'attendanceMap'
+    ));
 }
+
+
+
+
+
+
+
+
 
 }

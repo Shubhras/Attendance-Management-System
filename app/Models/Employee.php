@@ -38,6 +38,7 @@ class Employee extends Model
         'attendance_status',
         'joining_date',
         'is_operator',
+        'is_hr',
         'employee_code',
         'aadhar_card',
         'created_by',

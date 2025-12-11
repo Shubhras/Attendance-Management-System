@@ -184,33 +184,69 @@ public function show($uuid)
     /**
      * Store a new operator (create User + link to Employee).
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'employee_id' => ['required', 'exists:employees,id'],
-            'email'       => ['required', 'email', 'unique:users,email'],
-            'password'    => ['required', 'min:6'],
-        ]);
+//     public function store(Request $request)
+//     {
+//         $validated = $request->validate([
+//             'employee_id' => ['required', 'exists:employees,id'],
+//             'email'       => ['required', 'email', 'unique:users,email'],
+//             'password'    => ['required', 'min:6'],
+//         ]);
 
-        $employee = Employee::findOrFail($validated['employee_id']);
+//         $employee = Employee::findOrFail($validated['employee_id']);
 
-        // Create user account for operator
-        $user = User::create([
-            'name'     => $employee->name,
-            'employee_code'  => $employee->employee_code,
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-// echo"<pre>";
-// print_r($user);die;
-        // Save correct user id (users.id)
-        $employee->update([
-            'is_operator' => true,
-            'user_id'     => $user->id,
-        ]);
+//         // Create user account for operator
+//         $user = User::create([
+//             'name'     => $employee->name,
+//             'employee_code'  => $employee->employee_code,
+//             'email'    => $validated['email'],
+//             'password' => Hash::make($validated['password']),
+//         ]);
+// // echo"<pre>";
+// // print_r($user);die;
+//         // Save correct user id (users.id)
+//         $employee->update([
+//             'is_operator' => true,
+//             'user_id'     => $user->id,
+//         ]);
 
-        return redirect()->route('operators.index')->with('success', 'Operator assigned successfully.');
+//         return redirect()->route('operators.index')->with('success', 'Operator assigned successfully.');
+//     }
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'employee_id' => 'required|exists:employees,id',
+        'email'       => 'required|email|unique:users,email',
+        'password'    => 'required|min:6',
+        'role'        => 'required|in:operator,hr',
+    ]);
+
+    $employee = Employee::findOrFail($validated['employee_id']);
+
+    // Create user with role
+    $user = User::create([
+        'name'     => $employee->name,
+        'employee_code' => $employee->employee_code,
+        'email'    => $validated['email'],
+        'password' => Hash::make($validated['password']),
+        'role'     => $validated['role'], // operator OR hr
+    ]);
+
+    // Update employee flags
+    $employee->user_id = $user->id;
+
+    if ($validated['role'] == 'operator') {
+        $employee->is_operator = 1;
+        $employee->is_hr = 0;
+    } else {
+        $employee->is_hr = 1;
+        $employee->is_operator = 0;
     }
+
+    $employee->save();
+
+    return redirect()->route('operators.index')->with('success', ucfirst($validated['role']) . ' assigned successfully.');
+}
+
 public function updatePassword(Request $request, $userId)
 {
     $request->validate([
@@ -259,10 +295,11 @@ public function updatePassword(Request $request, $userId)
         }
     }
 
-    $employee->update([
-        'is_operator' => false,
-        'user_id' => null,
-    ]);
+$employee->update([
+    'is_operator' => 0,
+    'is_hr'       => 0,
+    'user_id'     => null,
+]);
 
     return redirect()->route('operators.index')->with('success', 'Operator removed successfully.');
 }

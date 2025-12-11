@@ -13,37 +13,76 @@ use Illuminate\Validation\ValidationException;
 
 class OperatorAuthController extends Controller
 {
+    // public function login(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'email' => 'required|email',
+    //         'password' => 'required',
+    //     ]);
+
+    //     $user = User::where('email', $validated['email'])->first();
+
+    //     if (! $user || ! Hash::check($validated['password'], $user->password)) {
+    //         return response()->json(['message' => 'Invalid credentials'], 401);
+    //     }
+
+    //     $token = $user->createToken('operator-token')->plainTextToken;
+    //     // 3️⃣ Match employee by employee_code
+    //     $employee = Employee::where('employee_code', $user->employee_code)->first();
+    //         // Add photo to user object
+    // if ($employee && $employee->photo) {
+    //     // $user->photo_url = asset('storage/' . $employee->photo);
+    //     $user->photo = $employee->photo; // if you want raw path also
+    // } else {
+    //     // $user->photo_url = null;
+    //     $user->photo = null;
+    // }
+    //     return response()->json([
+    //         'status' => 200,
+    //         'token' => $token,
+    //         'user' => $user,
+    //         'employee' => $employee,
+    //     ], 200); 
+    // }
     public function login(Request $request)
-    {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+{
+    $validated = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        $user = User::where('email', $validated['email'])->first();
+    $user = User::where('email', $validated['email'])->first();
 
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
+    if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
 
-        $token = $user->createToken('operator-token')->plainTextToken;
-        // 3️⃣ Match employee by employee_code
-        $employee = Employee::where('employee_code', $user->employee_code)->first();
-            // Add photo to user object
-    if ($employee && $employee->photo) {
-        // $user->photo_url = asset('storage/' . $employee->photo);
-        $user->photo = $employee->photo; // if you want raw path also
+    // Check role
+    if ($user->role == 'operator') {
+        $tokenName = 'operator-token';
+    } elseif ($user->role == 'hr') {
+        $tokenName = 'hr-token';
     } else {
-        // $user->photo_url = null;
-        $user->photo = null;
+        return response()->json(['message' => 'Unauthorized role'], 403);
     }
-        return response()->json([
-            'status' => 200,
-            'token' => $token,
-            'user' => $user,
-            'employee' => $employee,
-        ], 200); 
-    }
+
+    $token = $user->createToken($tokenName)->plainTextToken;
+
+    // Match employee by employee_code
+    $employee = Employee::where('employee_code', $user->employee_code)->first();
+
+    // Attach photo if exists
+    $user->photo = $employee && $employee->photo ? $employee->photo : null;
+
+    return response()->json([
+        'status' => 200,
+        'token' => $token,
+        'user' => $user,
+        'employee' => $employee,
+        'role' => $user->role, // return role explicitly
+    ], 200);
+}
+
 // public function login(Request $request)
 // {
 //     $validated = $request->validate([
