@@ -110,6 +110,11 @@ $subTitle = 'Manage Attendance';
                             <th>#</th>
                             <th>Employee</th>
                             <th>Emp Code</th>
+                            <th>Machine</th>
+                            <th>Shift Type</th>
+                            <th>Shift 1</th>
+                            <th>Shift 2</th>
+                            <th>Shift 3</th>
                             <th>Marked By</th>
                             <th>Shift</th>
                             <th>Mobile</th>
@@ -120,92 +125,75 @@ $subTitle = 'Manage Attendance';
                         </tr>
                     </thead>
 
-                    <tbody>
-                        @forelse($employees as $index => $emp)
-                        <!-- @php
-                        $att = $attendanceMap[$emp->id] ?? null;
-                        $status = $att->status ?? 'pending';
-                        $clock_in = $att->clock_in ?? '';
-                        $clock_out = $att->clock_out ?? '';
-                        @endphp -->
-                        {{-- @php
-    $att = $attendanceMap[$emp->id] ?? null;
-    $status = $att->status ?? 0;
-    $clock_in = $att->clock_in ? \Carbon\Carbon::parse($att->clock_in)->format('H:i') : '';
-    $clock_out = $att->clock_out ? \Carbon\Carbon::parse($att->clock_out)->format('H:i') : '';
-@endphp --}}
-                        @php
-                            $att = $attendanceMap[$emp->id] ?? null;
-                            $status = isset($att->status) ? (int)$att->status : null; // Convert to INT
-                            $clock_in = $att->clock_in ?? '';
-                            $clock_out = $att->clock_out ?? '';
-                        @endphp
-                        <tr>
-                            <td>{{ $employees->firstItem() + $index }}</td>
-                            <td>{{ $emp->name }}</td>
-                            <td>{{ $emp->employee_code }}</td>
-                            <td>{{ $att?->marker?->name ?? '-' }}</td>
-                            <!-- <td>{{ $att?->markedByUser?->name ?? '-' }}</td> -->
-                            <td>{{ $emp->shift?->shift_name ?? '-' }}</td>
-                            <td>{{ $emp->mobile }}</td>
-                            <td>
-                                <input type="hidden" name="records[{{ $index }}][employee_id]" value="{{ $emp->id }}">
-                                <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
-                                    <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
-                                    <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
-                                </select> -->
-                                <select name="records[{{ $index }}][status]" class="form-select form-select-sm">
-                                    <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
-                                    <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
-                                    <option value="2" {{ $status == 2 ? 'selected' : '' }}>Half day</option>
-                                </select>
-                                <!-- <select name="records[{{ $index }}][attendance_status]" class="form-select form-select-sm">
-                                    <option value="1" {{ $status === '1' ? 'selected' : '' }}>Present
-                                    </option>
-                                    <option value="half_day" {{ $status === 'half_day' ? 'selected' : '' }}>Half Day</option>
-                                    <option value="0" {{ $status === '0' ? 'selected' : '' }}>Leave</option>
-                                    <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending
-                                    </option>
-                                </select> -->
-                            </td>
-                            <td>
-                                <input type="time" name="records[{{ $index }}][clock_in]"
-                                    class="form-control form-control-sm" value="{{ $clock_in }}">
-                            </td>
-                            <td>
-                                <input type="time" name="records[{{ $index }}][clock_out]"
-                                    class="form-control form-control-sm" value="{{ $clock_out }}">
-                            </td>
-                            <td class="text-center">
-                            @if($att)
-                                <a href="{{ route('attendance.edit', $att->id) }}" class="btn btn-sm btn-light" title="Edit">
-                                    <iconify-icon icon="mdi:eye"></iconify-icon>
-                                </a>
-                            @else
-                             <!-- If no attendance → show Mark button -->
-                                <a href="{{ route('attendance.singleMark', [
-                                        'employee_id' => $emp->id,
-                                        'date' => request('date')
-                                    ]) }}"
-                                class="btn btn-sm btn-primary">
-                                Mark
-                                </a>
-                                <!-- <span class="text-muted">—</span> -->
-                            @endif
-                            </td>
-                            <!-- <td class="text-center">
-                                <a href="{{ route('attendance.edit', $att->id ?? 0) }}" class="btn btn-sm btn-light"
-                                    title="Edit">
-                                    <iconify-icon icon="mdi:eye"></iconify-icon>
-                                </a>
-                            </td> -->
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="9" class="text-center">No employees found.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
+                  <tbody>
+@forelse($employees as $index => $emp)
+
+    @php
+        // Get all attendances of employee
+        $attList = $attendanceMap[$emp->id] ?? collect();
+
+        // Pick MORNING first, if exists. Otherwise NIGHT.
+        $att = $attList->firstWhere('shift_type', 'morning')
+            ?? $attList->first();
+
+        $status = $att?->status ?? null;
+        $clock_in = $att?->clock_in ? \Carbon\Carbon::parse($att->clock_in)->format('H:i') : '';
+        $clock_out = $att?->clock_out ? \Carbon\Carbon::parse($att->clock_out)->format('H:i') : '';
+
+        $slot1 = $att?->slot1;
+        $slot2 = $att?->slot2;
+        $slot3 = $att?->slot3;
+
+        $shiftType = $att?->shift_type;
+        $markerName = $att?->marker?->name ?? '-';
+    @endphp
+
+    <tr>
+        <td>{{ $employees->firstItem() + $index }}</td>
+        <td>{{ $emp->name }}</td>
+        <td>{{ $emp->employee_code }}</td>
+        <td>{{ $emp->machineRelation?->name ?? 'N/A' }}</td>
+        <td>{{ $shiftType }}</td>
+        <td>{{ $slot1 }}</td>
+        <td>{{ $slot2 }}</td>
+        <td>{{ $slot3 }}</td>
+        <td>{{ $markerName }}</td>
+        <td>{{ $emp->shift?->shift_name ?? '-' }}</td>
+        <td>{{ $emp->mobile }}</td>
+
+        <td>
+            <input type="hidden" name="records[{{ $index }}][employee_id]" value="{{ $emp->id }}">
+            <input type="hidden" name="records[{{ $index }}][machine_id]" value="{{ $emp->machine?->id ?? '' }}">
+            
+            <select name="records[{{ $index }}][status]" class="form-select form-select-sm">
+                <option value="1" {{ $status == 1 ? 'selected' : '' }}>Present</option>
+                <option value="0" {{ $status == 0 ? 'selected' : '' }}>Leave</option>
+                <option value="2" {{ $status == 2 ? 'selected' : '' }}>Half day</option>
+            </select>
+        </td>
+
+        <td><input type="time" name="records[{{ $index }}][clock_in]" class="form-control form-control-sm" value="{{ $clock_in }}"></td>
+        <td><input type="time" name="records[{{ $index }}][clock_out]" class="form-control form-control-sm" value="{{ $clock_out }}"></td>
+
+        <td class="text-center">
+            @if($att)
+                <a href="{{ route('attendance.edit', $att->id) }}" class="btn btn-sm btn-light">
+                    <iconify-icon icon="mdi:eye"></iconify-icon>
+                </a>
+            @else
+                <a href="{{ route('attendance.singleMark', ['employee_id' => $emp->id, 'date' => request('date')]) }}"
+                   class="btn btn-sm btn-primary">Mark</a>
+            @endif
+        </td>
+    </tr>
+
+@empty
+<tr>
+    <td colspan="15" class="text-center">No employees found.</td>
+</tr>
+@endforelse
+</tbody>
+
                 </table>
             </div>
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
+use App\Models\{Attendance, Machine};
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -88,7 +88,7 @@ public function index(Request $request)
     $date    = $request->get('date', Carbon::today()->format('Y-m-d'));
 
     // Fetch employees (fingerprint = 1)
-    $query = Employee::with('shift')
+$query = Employee::with(['shift', 'machine'])
         ->where('fingerprint', 1)
         ->orderBy('name');
 
@@ -101,10 +101,15 @@ public function index(Request $request)
 
     $employees = $query->paginate($perPage)->withQueryString();
 
-    // Attendance Fetch (IMPORTANT: select ID)
+    // Attendance
     $attendanceQuery = Attendance::select(
         'id',
         'employee_id',
+        'machine_id',
+        'slot1',
+        'slot2',
+        'slot3',
+        'shift_type',
         'status',
         'clock_in',
         'clock_out',
@@ -138,67 +143,125 @@ public function index(Request $request)
             break;
     }
 
-    $attendances = $attendanceQuery->get();
+    $attendances = $attendanceQuery->with('machine', 'marker')->get();
+    $machine = Machine::orderBy('name')->get();
+    // group by employee — returns collection per employee
+    $attendanceMap = $attendances->groupBy('employee_id');
 
-    // Make Map: emp_id → attendance row
-    $attendanceMap = $attendances->keyBy('employee_id');
-
-    return view('attendance.index', compact('employees', 'attendanceMap', 'date'));
+    return view('attendance.index', compact('employees', 'attendanceMap', 'date','machine'));
 }
+
+// public function singleMarkForm(Request $request)
+// {
+//     $employee = Employee::findOrFail($request->employee_id);
+//     $date = $request->date ?? now()->format('Y-m-d');
+
+//     return view('attendance.single_mark', compact('employee', 'date'));
+// }
 public function singleMarkForm(Request $request)
 {
-    $employee = Employee::findOrFail($request->employee_id);
+    $employee = Employee::with('machine')->findOrFail($request->employee_id);
+
     $date = $request->date ?? now()->format('Y-m-d');
 
-    return view('attendance.single_mark', compact('employee', 'date'));
-}
+    // Get machine_id from employee relation
+    $machineId = $employee->machine?->id;
 
+    return view('attendance.single_mark', compact('employee', 'date', 'machineId'));
+}
+// public function storeSingle(Request $request)
+// {
+//     $request->validate([
+//         'employee_id' => 'required|exists:employees,id',
+//         'status'      => 'required|in:0,1,2',
+//         'clock_in'    => 'nullable',   // allow any format
+//         'clock_out'   => 'nullable',
+//         'date'        => 'required|date'
+//     ]);
+
+//     $selectedDate = $request->date;
+
+//     // Normalize times to H:i:s
+//     $clockIn = $request->clock_in
+//         ? date('H:i:s', strtotime($request->clock_in))
+//         : null;
+
+//     $clockOut = $request->clock_out
+//         ? date('H:i:s', strtotime($request->clock_out))
+//         : null;
+
+//     // Combine date + time for the datetime column
+//     $clockInDateTime = $clockIn ? ($selectedDate . ' ' . $clockIn) : null;
+//     $clockOutDateTime = $clockOut ? ($selectedDate . ' ' . $clockOut) : null;
+
+//     // Save attendance
+//     Attendance::updateOrCreate(
+//         [
+//             'employee_id' => $request->employee_id,
+//             'date'        => $selectedDate,  // unique for date + employee
+//         ],
+//         [
+//             'status'    => (int) $request->status,
+//             'clock_in'  => $clockIn,
+//             'clock_out' => $clockOut,
+//             'marked_by' => auth()->id(),
+//         ]
+//     );
+
+//     // Update employee status
+//     Employee::where('id', $request->employee_id)
+//         ->update([
+//             'attendance_status' => (int) $request->status
+//         ]);
+
+//     return redirect()->route('attendance.index')
+//         ->with('success', 'Attendance marked successfully!');
+// }
 public function storeSingle(Request $request)
 {
     $request->validate([
         'employee_id' => 'required|exists:employees,id',
         'status'      => 'required|in:0,1,2',
-        'clock_in'    => 'nullable',   // allow any format
+        'clock_in'    => 'nullable',
         'clock_out'   => 'nullable',
-        'date'        => 'required|date'
+        'date'        => 'required|date',
     ]);
 
+    $status = (int) $request->status;
     $selectedDate = $request->date;
+    $now = now();
 
-    // Normalize times to H:i:s
-    $clockIn = $request->clock_in
-        ? date('H:i:s', strtotime($request->clock_in))
-        : null;
+    $employee = Employee::findOrFail($request->employee_id);
 
-    $clockOut = $request->clock_out
-        ? date('H:i:s', strtotime($request->clock_out))
-        : null;
+    // Auto-detect slot values (like update)
+    $slot1 = $now;
+    $slot2 = $slot1; // default same as slot1
+    $slot3 = $slot2; // default same as slot2
 
-    // Combine date + time for the datetime column
-    $clockInDateTime = $clockIn ? ($selectedDate . ' ' . $clockIn) : null;
-    $clockOutDateTime = $clockOut ? ($selectedDate . ' ' . $clockOut) : null;
-
+    // Auto-set machine from employee
+    $machineId = $employee->machine_id ?? null;
     // Save attendance
     Attendance::updateOrCreate(
         [
-            'employee_id' => $request->employee_id,
-            'date'        => $selectedDate,  // unique for date + employee
+            'employee_id' => $employee->id,
+            'date'        => $selectedDate,
         ],
         [
-            'status'    => (int) $request->status,
-            'clock_in'  => $clockIn,
-            'clock_out' => $clockOut,
-            'marked_by' => auth()->id(),
+            'status'     => $status,
+            'scan_status'=> $status,
+            'slot1'      => $slot1,
+            'slot2'      => $slot2,
+            'slot3'      => $slot3,
+            'machine_id' => $machineId,
+            'marked_by'  => auth()->id(),
         ]
     );
 
-    // Update employee status
-    Employee::where('id', $request->employee_id)
-        ->update([
-            'attendance_status' => (int) $request->status
-        ]);
+    // Update employee attendance_status
+    $employee->update(['attendance_status' => $status]);
 
-    return redirect()->route('attendance.index')
+    return redirect()
+        ->route('attendance.index')
         ->with('success', 'Attendance marked successfully!');
 }
 
@@ -250,74 +313,143 @@ public function storeSingle(Request $request)
 /* ----------------------------
    MASS ATTENDANCE SAVE
 ----------------------------- */
+// befor slots
+
+// public function saveBulk(Request $request)
+// {
+//     $request->validate([
+//         'date' => 'required|date',
+//         'records' => 'required|array',
+//         'records.*.employee_id' => 'required|exists:employees,id',
+//         'records.*.status' => 'required|in:0,1,2',
+//         'records.*.clock_in' => 'nullable',   // no strict format
+//         'records.*.clock_out' => 'nullable',
+//     ]);
+
+//     DB::beginTransaction();
+
+//     try {
+//         $selectedDate = $request->date;
+
+//         foreach ($request->records as $row) {
+
+//             $employeeId = $row['employee_id'];
+//             $status     = (int) $row['status'];
+
+//             // Normalize time to H:i:s
+//             $clockIn = !empty($row['clock_in'])
+//                 ? date('H:i:s', strtotime($row['clock_in']))
+//                 : null;
+
+//             $clockOut = !empty($row['clock_out'])
+//                 ? date('H:i:s', strtotime($row['clock_out']))
+//                 : null;
+
+//             // Find existing attendance for that date
+//             $attendance = Attendance::where('employee_id', $employeeId)
+//                 ->whereDate('date', $selectedDate)
+//                 ->first();
+
+//             if ($attendance) {
+//                 // UPDATE existing
+//                 $attendance->update([
+//                     'status'    => $status,
+//                     'clock_in'  => $clockIn,
+//                     'clock_out' => $clockOut,
+//                     'marked_by' => auth()->id(),
+//                 ]);
+//             } else {
+//                 // CREATE new
+//                 Attendance::create([
+//                     'employee_id' => $employeeId,
+//                     'date'        => $selectedDate,
+//                     'status'      => $status,
+//                     'clock_in'    => $clockIn,
+//                     'clock_out'   => $clockOut,
+//                     'marked_by'   => auth()->id(),
+//                 ]);
+//             }
+
+//             // Update Employee table
+//             Employee::where('id', $employeeId)
+//                 ->update([
+//                     'attendance_status' => $status
+//                 ]);
+//         }
+
+//         DB::commit();
+//         return back()->with('success', 'Bulk attendance saved successfully!');
+
+//     } catch (\Throwable $e) {
+//         DB::rollBack();
+//         return back()->with('error', 'Failed to save: ' . $e->getMessage());
+//     }
+// }
 public function saveBulk(Request $request)
 {
     $request->validate([
         'date' => 'required|date',
         'records' => 'required|array',
         'records.*.employee_id' => 'required|exists:employees,id',
-        'records.*.status' => 'required|in:0,1,2',
-        'records.*.clock_in' => 'nullable',   // no strict format
-        'records.*.clock_out' => 'nullable',
+        'records.*.status' => 'required|in:0,1,2'
     ]);
 
     DB::beginTransaction();
 
     try {
-        $selectedDate = $request->date;
+        $date = $request->date;
 
-        foreach ($request->records as $row) {
+foreach ($request->records as $row) {
+    $empId = $row['employee_id'];
+    $status = (int)$row['status'];
+    $machineId = $row['machine_id'] ?? Employee::find($empId)?->machine_id;
+    $now = now();
+    $slot1 = $now;
+    $slot2 = $slot1; // default same as slot1
+    $slot3 = $slot2; // default same as slot2
+    $attendance = Attendance::where('employee_id', $empId)
+        ->whereDate('date', $date)
+        ->first();
 
-            $employeeId = $row['employee_id'];
-            $status     = (int) $row['status'];
-
-            // Normalize time to H:i:s
-            $clockIn = !empty($row['clock_in'])
-                ? date('H:i:s', strtotime($row['clock_in']))
-                : null;
-
-            $clockOut = !empty($row['clock_out'])
-                ? date('H:i:s', strtotime($row['clock_out']))
-                : null;
-
-            // Find existing attendance for that date
-            $attendance = Attendance::where('employee_id', $employeeId)
-                ->whereDate('date', $selectedDate)
-                ->first();
-
-            if ($attendance) {
-                // UPDATE existing
-                $attendance->update([
-                    'status'    => $status,
-                    'clock_in'  => $clockIn,
-                    'clock_out' => $clockOut,
-                    'marked_by' => auth()->id(),
-                ]);
-            } else {
-                // CREATE new
-                Attendance::create([
-                    'employee_id' => $employeeId,
-                    'date'        => $selectedDate,
-                    'status'      => $status,
-                    'clock_in'    => $clockIn,
-                    'clock_out'   => $clockOut,
-                    'marked_by'   => auth()->id(),
-                ]);
-            }
-
-            // Update Employee table
-            Employee::where('id', $employeeId)
-                ->update([
-                    'attendance_status' => $status
-                ]);
+    if ($attendance) {
+        // Fill next available slot
+        if (!$attendance->slot1) {
+            $attendance->slot1 = $now;
+        } elseif (!$attendance->slot2) {
+            $attendance->slot2 = $now;
+        } elseif (!$attendance->slot3) {
+            $attendance->slot3 = $now;
         }
+
+        $attendance->status     = $status;
+        $attendance->scan_status = 1;
+        $attendance->machine_id = $machineId;
+        $attendance->marked_by  = auth()->id();
+        $attendance->save();
+    } else {
+        Attendance::create([
+            'employee_id' => $empId,
+            'date'        => $date,
+            'machine_id'  => $machineId,
+            'slot1'      => $slot1,
+            'slot2'      => $slot2,
+            'slot3'      => $slot3,
+            'status'      => $status,
+            'scan_status' => 1,
+            'marked_by'   => auth()->id(),
+        ]);
+    }
+
+    Employee::where('id', $empId)->update(['attendance_status' => $status]);
+}
+
 
         DB::commit();
         return back()->with('success', 'Bulk attendance saved successfully!');
 
     } catch (\Throwable $e) {
         DB::rollBack();
-        return back()->with('error', 'Failed to save: ' . $e->getMessage());
+        return back()->with('error', 'Failed to save: '.$e->getMessage());
     }
 }
 
@@ -433,27 +565,74 @@ public function store(Request $request)
 
     //     return redirect()->route('attendance.index')->with('success', 'Attendance updated!');
     // }
+    
+    // slot code before
+// public function update(Request $request, $id)
+// {
+//     $attendance = Attendance::findOrFail($id);
+
+//     $request->validate([
+//         'status'    => 'required',
+//         'clock_in'  => 'nullable|date_format:H:i',
+//         'clock_out' => 'nullable|date_format:H:i',
+//     ]);
+
+//     // Ensure status is always numeric 0 or 1
+//     $status = (int)$request->status; // If coming as "1"/"0"
+
+//     // Update attendance record
+//     $attendance->update([
+//         'status'    => $status,
+//         'clock_in'  => $request->clock_in,
+//         'clock_out' => $request->clock_out,
+//     ]);
+
+//     // ✅ Update employee table also
+//     Employee::where('id', $attendance->employee_id)
+//         ->update(['attendance_status' => $status]);
+
+//     return redirect()
+//         ->route('attendance.index')
+//         ->with('success', 'Attendance updated!');
+// }
 public function update(Request $request, $id)
 {
     $attendance = Attendance::findOrFail($id);
 
     $request->validate([
-        'status'    => 'required',
-        'clock_in'  => 'nullable|date_format:H:i',
-        'clock_out' => 'nullable|date_format:H:i',
+        'status' => 'required|in:0,1,2',
+        'clock_in' => 'nullable',
+        'clock_out' => 'nullable',
+        'machine_id' => 'nullable|exists:machines,id',
     ]);
 
-    // Ensure status is always numeric 0 or 1
-    $status = (int)$request->status; // If coming as "1"/"0"
+    $status = (int)$request->status;
+    $now = now();
 
-    // Update attendance record
+    // Auto-detect slot values
+    $slot1 = $attendance->slot1 ?? $now;
+    $slot2 = $attendance->slot2 ?? ($attendance->slot1 ? $now : null);
+    $slot3 = $attendance->slot3 ?? ($attendance->slot2 ? $now : null);
+
+    // Machine ID from request or fallback to employee relation
+    $machineId = $request->machine_id ?? $attendance->employee->machine_id ?? null;
+
+    // Optionally, combine clock_in/out with date
+    $clockIn = $request->clock_in ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_in : $attendance->clock_in;
+    $clockOut = $request->clock_out ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_out : $attendance->clock_out;
+
     $attendance->update([
-        'status'    => $status,
-        'clock_in'  => $request->clock_in,
-        'clock_out' => $request->clock_out,
+        'status'      => $status,
+        'scan_status' => $status,
+        'slot1'       => $slot1,
+        'slot2'       => $slot2,
+        'slot3'       => $slot3,
+        'machine_id'  => $machineId,
+        'clock_in'    => $clockIn,
+        'clock_out'   => $clockOut,
+        'marked_by'   => auth()->id(),
     ]);
 
-    // ✅ Update employee table also
     Employee::where('id', $attendance->employee_id)
         ->update(['attendance_status' => $status]);
 
@@ -461,6 +640,7 @@ public function update(Request $request, $id)
         ->route('attendance.index')
         ->with('success', 'Attendance updated!');
 }
+
 
     /* ----------------------------
        EXPORT PDF (ALL EMPLOYEES)

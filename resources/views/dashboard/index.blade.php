@@ -2,7 +2,26 @@
 
 @section('content')
 <div class="row gy-4">
+{{-- Excel Import Card --}}
+<div class="col-xxl-4 col-md-6 mb-4">
+    <div class="card px-24 py-20 radius-12 border shadow-sm h-100">
+        <h5 class="fw-bold mb-3">Import Attendance (Excel)</h5>
 
+        <form action="{{ route('attendance.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Select Excel File</label>
+                <input type="file" name="file" class="form-control" required>
+                <small class="text-muted">Allowed: .xlsx</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">
+                <i class="fa fa-upload me-2"></i> Import Attendance
+            </button>
+        </form>
+    </div>
+</div>
     {{-- Stats Cards --}}
     <div class="col-xxl-3 col-sm-6">
         <div class="card px-24 py-16 shadow-none radius-8 border h-100 bg-gradient-start-3">

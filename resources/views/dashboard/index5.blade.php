@@ -2,10 +2,44 @@
 
 @section('content')
 <div class="row gy-4">
+    <!-- Flash Messages -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            <strong>Success!</strong> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <strong>Error!</strong> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+{{-- Excel Import Card --}}
+<div class="col-xxl-4 col-md-6 mb-4">
+    <div class="card px-24 py-20 radius-12 border shadow-sm h-100">
+        <h5 class="fw-bold mb-3">Import Attendance (Excel)</h5>
+
+        <form action="{{ route('attendance.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Select Excel File</label>
+                <input type="file" name="file" class="form-control" required>
+                <small class="text-muted">Allowed: .xlsx</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">
+                <i class="fa fa-upload me-2"></i> Import Attendance
+            </button>
+        </form>
+    </div>
+</div>
 
     {{-- Stats Cards --}}
     <div class="col-xxl-3 col-sm-6">
-        <div class="card px-24 py-16 shadow-none radius-8 border h-100 bg-gradient-start-3">
+        <div class="card px-24 py-16 shadow-none radius-8 border h-50 bg-gradient-start-3">
             <div class="card-body p-0">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
                     <div class="d-flex align-items-center">
@@ -25,7 +59,7 @@
     </div>
 
     <div class="col-xxl-3 col-sm-6">
-        <div class="card px-24 py-16 shadow-none radius-8 border h-100 bg-gradient-start-2">
+        <div class="card px-24 py-16 shadow-none radius-8 border h-50 bg-gradient-start-2">
             <div class="card-body p-0">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
                     <div class="d-flex align-items-center">
@@ -45,7 +79,7 @@
     </div>
 
     <div class="col-xxl-3 col-sm-6">
-        <div class="card px-24 py-16 shadow-none radius-8 border h-100 bg-gradient-start-5">
+        <div class="card px-24 py-16 shadow-none radius-8 border h-50 bg-gradient-start-5">
             <div class="card-body p-0">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
                     <div class="d-flex align-items-center">
@@ -65,7 +99,7 @@
     </div>
 
     <div class="col-xxl-3 col-sm-6">
-        <div class="card px-24 py-16 shadow-none radius-8 border h-100 bg-gradient-start-4">
+        <div class="card px-24 py-16 shadow-none radius-8 border h-50 bg-gradient-start-4">
             <div class="card-body p-0">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-8">
                     <div class="d-flex align-items-center">

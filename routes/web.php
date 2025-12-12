@@ -271,6 +271,8 @@ Route::get('/attendance-summary', [AttendanceController::class, 'summary'])
     //     ->name('operators.updatePassword');
     Route::post('/operators/update-password/{userId}', [OperatorController::class, 'updatePassword'])
      ->name('operators.updatePassword');
+     Route::post('/attendance/import', [DashboardController::class, 'importAttendance'])
+    ->name('attendance.import');
 
 });
 

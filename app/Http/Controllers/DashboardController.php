@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\AttendanceImport;
 use Illuminate\Http\Request;
 use DB;
 class DashboardController extends Controller
@@ -108,6 +109,15 @@ $salarySummary = DB::table('salary_payments')
     {
         return view('dashboard/index10');
     }
+public function importAttendance(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,csv'
+    ]);
 
+    Excel::import(new AttendanceImport, $request->file('file'));
+
+    return back()->with('success', 'Attendance Imported Successfully');
+}
     
 }

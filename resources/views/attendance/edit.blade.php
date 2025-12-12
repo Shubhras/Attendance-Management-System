@@ -36,6 +36,7 @@
 
     <form action="{{ route('attendance.update', $attendance->id) }}" method="POST">
         @csrf
+        <input type="hidden" name="machine_id" value="{{ $attendance->machine_id ?? $attendance->employee->machine_id }}">
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label">Employee</label>

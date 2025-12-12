@@ -13,7 +13,7 @@
 
         <input type="hidden" name="employee_id" value="{{ $employee->id }}">
         <input type="hidden" name="date" value="{{ $date }}">
-
+        <input type="hidden" name="machine_id" value="{{ $machineId }}">
         <div class="row g-3">
 
             <div class="col-md-6">
