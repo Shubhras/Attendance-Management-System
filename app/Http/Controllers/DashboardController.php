@@ -109,15 +109,70 @@ $salarySummary = DB::table('salary_payments')
     {
         return view('dashboard/index10');
     }
-public function importAttendance(Request $request)
+// public function importAttendance(Request $request)
+// {
+//     $request->validate([
+//         'file' => 'required|mimes:xlsx,csv'
+//     ]);
+
+//     Excel::import(new AttendanceImport, $request->file('file'));
+
+//     return back()->with('success', 'Attendance Imported Successfully');
+// }
+    public function importAttendance(Request $request)
 {
     $request->validate([
-        'file' => 'required|mimes:xlsx,csv'
+         'file' => 'required|file|extensions:xlsx,csv'
+        // 'file' => 'required|mimes:xlsx,csv'
     ]);
 
-    Excel::import(new AttendanceImport, $request->file('file'));
+    try {
+        $import = new AttendanceImport();
+        Excel::import($import, $request->file('file'));
 
-    return back()->with('success', 'Attendance Imported Successfully');
+        if ($import->failures()->isNotEmpty()) {
+            return back()->with('import_errors', $import->failures());
+        }
+
+        return back()->with('success', 'Attendance Imported Successfully');
+
+    } catch (\Exception $e) {
+        return back()->with('error', $e->getMessage());
+    }
 }
-    
+public function machinesalaryCalculate(Request $request)
+{
+    $query = DB::table('machines')
+        ->leftJoin('employees', 'machines.id', '=', 'employees.machine_id')
+        ->select(
+            'machines.id',
+            'machines.name as machine_name',
+            'machines.image as machine_image',
+            DB::raw('COUNT(employees.id) as total_employees'),
+            DB::raw('COALESCE(SUM(
+                CASE 
+                    WHEN employees.salary_type = "monthly" THEN employees.salary_monthly
+                    WHEN employees.salary_type = "daily" THEN employees.salary_daily * 30
+                    ELSE 0 
+                END
+            ), 0) as total_monthly_salary')
+        )
+        ->groupBy('machines.id', 'machines.name', 'machines.image');
+
+    // Search by machine name
+    if ($search = $request->get('search')) {
+        $query->where('machines.name', 'like', "%{$search}%");
+    }
+
+    $machineStats = $query->orderBy('machines.name')->paginate(10)->withQueryString();
+
+    $grandTotalEmployees = $machineStats->sum('total_employees');
+    $grandTotalSalary = $machineStats->sum('total_monthly_salary');
+
+    return view('dashboard.machine_salary', compact(
+        'machineStats',
+        'grandTotalEmployees',
+        'grandTotalSalary'
+    ));
+}
 }

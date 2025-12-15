@@ -16,6 +16,22 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    @if(session('import_errors'))
+    <div class="alert alert-danger">
+        <strong>Errors found in Excel:</strong>
+        <ul>
+            @foreach(session('import_errors') as $failure)
+                <li>
+                    Row {{ $failure->row() }}: 
+                    @foreach($failure->errors() as $error)
+                        {{ $error }}
+                    @endforeach
+                </li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 {{-- Excel Import Card --}}
 <div class="col-xxl-4 col-md-6 mb-4">
     <div class="card px-24 py-20 radius-12 border shadow-sm h-100">

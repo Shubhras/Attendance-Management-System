@@ -231,13 +231,24 @@ Route::middleware(['web', 'auth', 'role:admin'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
 
     Route::resource('contractors', ContractorController::class);
+    // Single Contractor Monthly Report
+Route::get('/contractors/{contractor_id}/report/download', [ContractorController::class, 'downloadSingleContractorReport'])
+    ->name('contractors.report.download');
+
+// All Contractors - Last 3 Months Report
+Route::get('/contractors/report/last-3-months', [ContractorController::class, 'downloadLast3MonthsReport'])
+    ->name('contractors.report.last3months');
     Route::resource('machines', MachineController::class);
     Route::resource('shifts', ShiftController::class);
-    
+    Route::get('/machine-salary', [DashboardController::class, 'machinesalaryCalculate'])->name('dashboard.machine-salary');
+
     // Route::resource('employees-get', EmployeesController::class);
     Route::resource('employees-get', EmployeesController::class)->parameters([
     'employees-get' => 'employee'
 ]);
+Route::get('/employees/{uuid}/print-card', [EmployeesController::class, 'printCard'])
+     ->name('employees-get.print-card');
+
     Route::post('/employees-get/{uuid}/restore', [EmployeesController::class, 'restore'])->name('employees.restore');
     Route::resource('operators', OperatorController::class);
     // Attendance Module

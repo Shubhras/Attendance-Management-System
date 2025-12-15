@@ -643,9 +643,151 @@ public function getMachines(Request $request)
 //             ],
 //         ]);
 //     }
+// working with specific machine id
+// public function getEmployeesByMachine(Request $request, $machine_id)
+// {
+//     // Check if machine exists
+//     $machine = Machine::find($machine_id);
+//     if (!$machine) {
+//         return response()->json([
+//             'status' => 404,
+//             'message' => 'Machine not found',
+//         ], 404);
+//     }
+
+//     $perPage = (int) $request->get('per_page', 10);
+//     $search  = $request->get('search');
+
+//     $today = Carbon::today()->format('Y-m-d');
+
+//     // Build query
+//     $query = Employee::where('machine_id', $machine_id);
+
+//     if (!empty($search)) {
+//         $query->where(function ($q) use ($search) {
+//             $q->where('name', 'like', "%{$search}%")
+//               ->orWhere('employee_code', 'like', "%{$search}%")
+//               ->orWhere('mobile', 'like', "%{$search}%");
+//         });
+//     }
+
+//     // Paginate employees
+//     $employees = $query->orderBy('id', 'desc')->paginate($perPage);
+
+//     // Prepare result
+//     $employeesData = $employees->map(function ($employee) use ($today) {
+
+//         // 🔥 Fetch today's attendance
+//         $attendance = Attendance::where('employee_id', $employee->id)
+//             ->whereDate('date', $today)
+//             ->first();
+
+//         $today_status = $attendance ? (int)$attendance->status : 0; // If not found → 0
+
+//         return [
+//             'id'            => $employee->id,
+//             'uuid'          => $employee->uuid,
+//             'employee_code' => $employee->employee_code,
+//             'name'          => $employee->name,
+//             'mobile'        => $employee->mobile,
+//             'gender'        => $employee->gender,
+//             'machine_id'    => $employee->machine_id,
+//             'machine'       => optional($employee->machine)->name ?? null,
+//             'salary_type'   => $employee->salary_type,
+//             'salary_monthly'=> $employee->salary_monthly,
+//             'salary_daily'  => $employee->salary_daily,
+//             'employee_type' => $employee->employee_type,
+//             'company_department' => $employee->company_department,
+//             'photo'         => $employee->photo,
+//             'fingerprint'   => $employee->fingerprint,
+//             'fingerprint_template_data'   => $employee->fingerprint_template_data,
+
+//             // 🔥 FIXED: Always return TODAY'S attendance status
+//             'attendance_status' => $today_status,
+
+//             'employee_work_title'   => $employee->employee_work_title,
+//             'joining_date'   => $employee->joining_date,
+//             'aadhar_card'    => $employee->aadhar_card,
+//             'created_at'     => $employee->created_at,
+//             'updated_at'     => $employee->updated_at,
+//         ];
+//     });
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Employee list fetched successfully',
+//         'data' => $employeesData,
+//         'pagination' => [
+//             'total' => $employees->total(),
+//             'per_page' => $employees->perPage(),
+//             'current_page' => $employees->currentPage(),
+//             'last_page' => $employees->lastPage(),
+//             'next_page_url' => $employees->nextPageUrl(),
+//             'prev_page_url' => $employees->previousPageUrl(),
+//         ],
+//     ]);
+// }
 public function getEmployeesByMachine(Request $request, $machine_id)
 {
-    // Check if machine exists
+    $search = $request->get('search');
+    $perPage = (int) $request->get('per_page', 10);
+    $today = Carbon::today()->toDateString();
+
+    // If search includes employee_code like "EMP-09", search globally (ignore machine_id)
+    if ($search && preg_match('/^EMP-\d+$/i', trim($search))) {
+        $employee = Employee::where('employee_code', 'LIKE', "%{$search}%")
+            ->with('machine')
+            ->first();
+
+        if (!$employee) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Employee not found with employee id: ' . $search,
+                'data' => [],
+                'pagination' => null
+            ], 404);
+        }
+
+        // Get today's attendance
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        $today_status = $attendance ? (int)$attendance->status : 0;
+
+        $employeeData = [
+            'id'            => $employee->id,
+            'uuid'          => $employee->uuid,
+            'employee_code' => $employee->employee_code,
+            'name'          => $employee->name,
+            'mobile'        => $employee->mobile,
+            'gender'        => $employee->gender,
+            'machine_id'    => $employee->machine_id,
+            'machine'       => optional($employee->machine)->name ?? 'Unassigned',
+            'salary_type'   => $employee->salary_type,
+            'salary_monthly'=> $employee->salary_monthly,
+            'salary_daily'  => $employee->salary_daily,
+            'employee_type' => $employee->employee_type,
+            'company_department' => $employee->company_department,
+            'photo'         => $employee->photo ? asset('employees/photos/' . basename($employee->photo)) : null,
+            'fingerprint'   => $employee->fingerprint,
+            'attendance_status' => $today_status,
+            'employee_work_title' => $employee->employee_work_title,
+            'joining_date'   => $employee->joining_date,
+            'aadhar_card'    => $employee->aadhar_card,
+            'created_at'     => $employee->created_at->format('Y-m-d H:i:s'),
+            'updated_at'     => $employee->updated_at->format('Y-m-d H:i:s'),
+        ];
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Employee found by employee id',
+            'data' => [$employeeData], // Return as array for consistency
+            'pagination' => null
+        ]);
+    }
+
+    // Normal flow: Get employees under specific machine
     $machine = Machine::find($machine_id);
     if (!$machine) {
         return response()->json([
@@ -654,34 +796,24 @@ public function getEmployeesByMachine(Request $request, $machine_id)
         ], 404);
     }
 
-    $perPage = (int) $request->get('per_page', 10);
-    $search  = $request->get('search');
-
-    $today = Carbon::today()->format('Y-m-d');
-
-    // Build query
     $query = Employee::where('machine_id', $machine_id);
 
-    if (!empty($search)) {
+    // Optional name/mobile search (but not employee_code)
+    if ($search && !preg_match('/^EMP-\d+$/i', trim($search))) {
         $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
-              ->orWhere('employee_code', 'like', "%{$search}%")
               ->orWhere('mobile', 'like', "%{$search}%");
         });
     }
 
-    // Paginate employees
     $employees = $query->orderBy('id', 'desc')->paginate($perPage);
 
-    // Prepare result
     $employeesData = $employees->map(function ($employee) use ($today) {
-
-        // 🔥 Fetch today's attendance
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('date', $today)
             ->first();
 
-        $today_status = $attendance ? (int)$attendance->status : 0; // If not found → 0
+        $today_status = $attendance ? (int)$attendance->status : 0;
 
         return [
             'id'            => $employee->id,
@@ -691,24 +823,20 @@ public function getEmployeesByMachine(Request $request, $machine_id)
             'mobile'        => $employee->mobile,
             'gender'        => $employee->gender,
             'machine_id'    => $employee->machine_id,
-            'machine'       => optional($employee->machine)->name ?? null,
+            'machine'       => optional($employee->machine)->name ?? 'Unassigned',
             'salary_type'   => $employee->salary_type,
             'salary_monthly'=> $employee->salary_monthly,
             'salary_daily'  => $employee->salary_daily,
             'employee_type' => $employee->employee_type,
             'company_department' => $employee->company_department,
-            'photo'         => $employee->photo,
+            'photo'         => $employee->photo ? asset('employees/photos/' . basename($employee->photo)) : null,
             'fingerprint'   => $employee->fingerprint,
-            'fingerprint_template_data'   => $employee->fingerprint_template_data,
-
-            // 🔥 FIXED: Always return TODAY'S attendance status
             'attendance_status' => $today_status,
-
-            'employee_work_title'   => $employee->employee_work_title,
+            'employee_work_title' => $employee->employee_work_title,
             'joining_date'   => $employee->joining_date,
             'aadhar_card'    => $employee->aadhar_card,
-            'created_at'     => $employee->created_at,
-            'updated_at'     => $employee->updated_at,
+            'created_at'     => $employee->created_at->format('Y-m-d H:i:s'),
+            'updated_at'     => $employee->updated_at->format('Y-m-d H:i:s'),
         ];
     });
 
@@ -726,7 +854,6 @@ public function getEmployeesByMachine(Request $request, $machine_id)
         ],
     ]);
 }
-
 public function getTotalCounts()
 {
     return response()->json([

@@ -8,6 +8,7 @@ use App\Models\{Machine,Shift,Attendance};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -211,6 +212,60 @@ use Carbon\Carbon;
 // ]);
         return redirect()->route('employees-get.index')->with('success', 'Employee created successfully!');
     }
+// public function printCard($uuid)
+// {
+//     $employee = Employee::with(['contractor', 'machine'])
+//         ->where('uuid', $uuid)
+//         ->firstOrFail();
+//             $shifts = Shift::orderBy('shift_name')->get();
+//             $machine = Machine::all();
+//     $pdf = PDF::loadView('employees-get.id-card', compact('employee','machine'));
+
+//     // 1 inch = 72 points
+//     $width = 4 * 72;     // 288
+//     $height = 2.7 * 72;  // 194
+
+//     // Correct dompdf required format:
+//     $pdf->setPaper([0, 0, $width, $height], 'portrait');
+
+//     return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
+// }
+public function printCard($uuid)
+{
+    $employee = Employee::with(['contractor', 'machine'])
+        ->where('uuid', $uuid)
+        ->firstOrFail();
+
+    $machine = Machine::all();
+
+    // Create PDF
+    $pdf = PDF::loadView('employees-get.id-card', compact('employee', 'machine'));
+
+    // SMALL CARD SIZE → 4 inch × 2.7 inch
+    // 1 inch = 72 points
+    $width = 4 * 72;     // 288
+    $height = 2.7 * 72;  // 194.4
+
+    $pdf->setPaper([0, 0, $width, $height], 'portrait');
+
+    return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
+}
+
+// public function printCard($uuid)
+// {
+//     $employee = Employee::with(['contractor', 'machine'])
+//         ->where('uuid', $uuid)
+//         ->firstOrFail();
+
+//     $machine = Machine::all();
+
+//     $pdf = PDF::loadView('employees-get.id-card', compact('employee','machine'))
+//               ->setPaper('A4', 'portrait'); // A4 size
+
+//     return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
+// }
+
+
 
         public function edit(Employee $employee)
         {

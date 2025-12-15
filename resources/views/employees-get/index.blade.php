@@ -130,6 +130,12 @@ $subTitle = 'Manage Employees';
                                     class="btn btn-sm btn-success" title="Edit">
                                     <iconify-icon icon="lucide:edit"></iconify-icon>
                                 </a>
+                                <a href="{{ route('employees-get.print-card', $employee->uuid) }}" 
+                                class="btn btn-sm btn-warning" 
+                                title="Print ID Card" 
+                                target="_blank">
+                                <iconify-icon icon="mdi:card-outline"></iconify-icon>
+                                </a>
                                 <form method="POST" action="{{ route('employees-get.destroy', $employee->uuid) }}"
                                     style="display:inline;">
                                     @csrf

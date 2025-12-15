@@ -48,17 +48,18 @@ $subTitle = 'Contractors';
                 <div class="navbar-search">
                     <input type="text" class="bg-base h-40-px w-auto" name="search" value="{{ request('search') }}"
                         placeholder="Search">
-                    <button class="btn" type="submit" style="border:none;background:transparent;">
-                        <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
+                    <button class="btn btn-primary" type="submit">
+                       submit
                     </button>
                 </div>
-
-                <select class="form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px" name="status" disabled>
-                    <option>Status</option>
-                </select>
+                                <!-- Last 3 Months Report Button -->
+            <a href="{{ route('contractors.report.last3months') }}"
+               class="btn btn-success text-sm btn-sm px-16 py-12 radius-8 d-flex align-items-center gap-2">
+                <iconify-icon icon="solar:download-bold" class="icon"></iconify-icon>
+                Last 3 Months Report
+            </a>    
             </form>
         </div>
-
         <button type="button"
             class="btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2"
             data-bs-toggle="modal" data-bs-target="#createContractorModal">
@@ -116,7 +117,12 @@ $subTitle = 'Contractors';
                                     title="Edit">
                                     <iconify-icon icon="lucide:edit" class="menu-icon"></iconify-icon>
                                 </a>
-
+                            <!-- Download Report Button -->
+                                    <a href="{{ route('contractors.report.download', $contractor->id) }}?month={{ now()->month }}&year={{ now()->year }}"
+                                    class="bg-info-focus text-info bg-hover-info-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
+                                    title="Download Monthly Report">
+                                        <iconify-icon icon="solar:download-minimalistic-bold" class="menu-icon"></iconify-icon>
+                                    </a>
                                 <form method="POST" action="{{ route('contractors.destroy', $contractor->uuid) }}"
                                     style="display:inline;">
                                     @csrf

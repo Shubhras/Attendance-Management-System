@@ -37,6 +37,10 @@
                         <a href="{{ route('index5') }}"><i
                                 class="ri-circle-fill circle-icon text-success-main w-auto"></i> Summary Dashboard</a>
                     </li>
+                    <li>
+                        <a href="{{ route('dashboard.machine-salary') }}"><i
+                                class="ri-circle-fill circle-icon text-success-main w-auto"></i>Total Machine Consumptions</a>
+                    </li>
                     <!-- <li>
                         <a href="{{ route('index6') }}"><i class="ri-circle-fill circle-icon text-purple w-auto"></i>
                             LMS</a>
