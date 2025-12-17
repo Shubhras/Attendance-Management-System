@@ -5,12 +5,26 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\AttendanceImport;
 use Illuminate\Http\Request;
 use DB;
+use Illuminate\Support\Facades\Response;
 class DashboardController extends Controller
 {
     // public function index()
     // {
     //     return view('dashboard/index');
     // }
+public function downloadAttendanceTemplate()
+{
+    $filePath = public_path('templates/employee_attendance.xlsx');
+
+    if (!file_exists($filePath)) {
+        abort(404, 'Attendance template not found');
+    }
+
+    return response()->download(
+        $filePath,
+        'attendance_import_template.xlsx'
+    );
+}
      public function index()
     {
 $salarySummary = DB::table('salary_payments')

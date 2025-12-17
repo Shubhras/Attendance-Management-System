@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OperatorAuthController;
 use App\Http\Controllers\Api\OperatorAttendanceController;
 use App\Http\Controllers\Api\AdminAuthController;
-
+use App\Http\Controllers\Api\AdvancePaymentController;
+use App\Http\Controllers\Api\SalaryPaymentController;
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -23,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/contractors/report/download', [OperatorAuthController::class, 'downloadContractorReport']);
     Route::get('/contractors/{id}/download', [OperatorAuthController::class, 'downloadSingleContractorReport']);
     Route::post('/thumb-machine/store', [OperatorAuthController::class, 'storeThumb']);
+    Route::post('/advance-payments', [AdvancePaymentController::class, 'store']);
+    Route::post('/hr/salary/pay', [SalaryPaymentController::class, 'store']);
 
         // Operator side
     Route::get('/operator/employees', [OperatorAttendanceController::class, 'assignedEmployees']);

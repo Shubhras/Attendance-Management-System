@@ -24,6 +24,7 @@ use App\Http\Controllers\SalaryController;
 
 use App\Http\Controllers\CryptocurrencyController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\AdvancePaymentController;
 
 Route::get('/', function () {
     return redirect()->route('signin');
@@ -225,7 +226,8 @@ Route::prefix('cryptocurrency')->group(function () {
 Route::get('/signin', [AuthenticationController::class, 'showLogin'])->name('signin');
 Route::post('/signin', [AuthenticationController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthenticationController::class, 'logout'])->name('logout');
-
+Route::get('/attendance/dummy-download', [DashboardController::class, 'downloadAttendanceTemplate'])
+    ->name('attendance.template.download');
 Route::middleware(['web', 'auth', 'role:admin'])->group(function () {
     
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -273,6 +275,11 @@ Route::get('/attendance-summary', [AttendanceController::class, 'summary'])
     Route::post('/salary/pay', [SalaryController::class, 'pay'])->name('salary.pay'); // api style
     Route::get('/salary/slip/{id}', [SalaryController::class, 'slipPdf'])->name('salary.slipPdf');
     Route::get('/salary/report/monthly', [SalaryController::class, 'monthlyReportPdf'])->name('salary.report.monthly');
+        Route::get('/advance-payments', [AdvancePaymentController::class,'index'])
+        ->name('advance.index');
+
+    Route::post('/advance-payments', [AdvancePaymentController::class,'store'])
+        ->name('advance.store');
     // Route::post('/attendance/mark', [AttendanceController::class,'mark']); // admin mark
     // Route::post('/attendance/scan', [AttendanceController::class,'scan']); // device -> scan
     // Route::get('/attendance/list', [AttendanceController::class,'list']);

@@ -32,6 +32,9 @@
     <div class="d-flex justify-content-between mb-3">
         <h5>Salary Payments</h5>
         <div>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#advanceModal">
+            Advance Payment
+            </button>
             <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#calculateModal">Calculate & Pay</a>
             <a href="{{ route('salary.report.monthly', ['month' => request('month', \Carbon\Carbon::now()->format('Y-m'))]) }}" class="btn btn-outline-primary">Download Monthly Report</a>
         </div>
@@ -53,7 +56,7 @@
     <div class="table-responsive">
         <table class="table bordered-table">
             <thead>
-                <tr><th>#</th><th>Employee</th><th>Month</th><th>Gross</th><th>Net</th><th>Date Paid</th><th>Action</th></tr>
+                <tr><th>#</th><th>Employee</th><th>Month</th><th>Gross</th><th>Net</th><th>Date Paid</th><th>Paid By</th><th>Action</th></tr>
             </thead>
             <tbody>
                 @foreach($payments as $p)
@@ -64,6 +67,13 @@
                     <td>{{ number_format($p->gross_amount,2) }}</td>
                     <td>{{ number_format($p->net_amount,2) }}</td>
                     <td>{{ $p->date_paid }}</td>
+                    <td>
+                        @if($p->creator)
+                            {{ $p->creator->name }} ({{ $p->creator->role }})
+                        @else
+                            —
+                        @endif
+                    </td>
                     <td>
                         <a href="{{ route('salary.slipPdf', $p->id) }}" class="btn btn-sm btn-outline-primary">Slip PDF</a>
                     </td>
@@ -120,6 +130,43 @@
     </div>
   </div>
 </div>
+ <!-- Advance Payment Modal -->
+  <div class="modal fade" id="advanceModal">
+ <div class="modal-dialog">
+  <form method="POST" action="{{ route('advance.store') }}">
+    @csrf
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5>Advance Payment</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <select name="employee_id" id="employee_id" class="form-select" required>
+            <option value="">Select Employee</option>
+            @foreach(\App\Models\Employee::orderBy('name')->get() as $e)
+                <option value="{{ $e->id }}">{{ $e->name }} ({{ $e->employee_code }})</option>
+            @endforeach
+        </select>
+
+        <input type="number" name="amount" class="form-control mt-2" placeholder="Amount" required>
+
+        <select name="machine_id" class="form-select mt-2">
+          <option value="">Machine (optional)</option>
+          @foreach(\App\Models\Machine::all() as $m)
+            <option value="{{ $m->id }}">{{ $m->name }}</option>
+          @endforeach
+        </select>
+
+        <textarea name="reason" class="form-control mt-2" placeholder="Reason"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success">Save</button>
+      </div>
+    </div>
+  </form>
+ </div>
+</div>
+
 @endsection
 
 
@@ -152,6 +199,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <strong>Half Days:</strong> ${d.half_day} <br/>
                 <strong>Leave:</strong> ${d.leave} <br/>
                 <strong>Gross:</strong> ${d.gross} <br/>
+                        <strong>Advance Payment:</strong> 
+        <span class="text-danger">- ₹${d.advance_deduction}</span> <br/>
                 <strong>Net:</strong> ${d.net}
             </div>
         `;

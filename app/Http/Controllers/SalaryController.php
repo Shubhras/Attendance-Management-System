@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Attendance;
-use App\Models\SalaryPayment;
+use App\Models\{SalaryPayment,AdvancePayment};
 use App\Models\SalaryPaymentItem;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,8 +18,9 @@ class SalaryController extends Controller
         $month = $request->get('month', Carbon::now('Asia/Kolkata')->format('Y-m'));
         $employeeId = $request->get('employee_id');
 
-        $query = SalaryPayment::with('employee')->orderByDesc('date_paid');
-
+        // $query = SalaryPayment::with('employee')->orderByDesc('date_paid');
+$query = SalaryPayment::with(['employee', 'creator'])
+    ->orderByDesc('date_paid');
         if ($employeeId) $query->where('employee_id', $employeeId);
         if ($month) $query->where('month', $month);
 
@@ -150,6 +151,67 @@ class SalaryController extends Controller
 //     ]);
 // }
 
+// public function calculate(Request $request)
+// {
+//     $request->validate([
+//         'employee_id' => 'required|exists:employees,id',
+//         'month' => 'required|date_format:Y-m'
+//     ]);
+
+//     $employee = Employee::findOrFail($request->employee_id);
+//     $month = $request->month;
+
+//     $start = Carbon::parse($month . '-01')->startOfMonth();
+//     $end = Carbon::parse($month . '-01')->endOfMonth();
+//     $daysInMonth = $start->daysInMonth;
+
+//     // Get attendance for the month
+//     $attendances = Attendance::where('employee_id', $employee->id)
+//         ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+//         ->get();
+
+//     // ✔️ Correct numeric logic
+//     $presentCount = $attendances->where('status', 1)->count();  // Present
+//     $halfDayCount = $attendances->where('status', 2)->count();  // Half Day
+//     $leaveCount   = $attendances->where('status', 0)->count();  // Leave
+
+//     // ✔️ Absent = days without attendance record
+//     $absentCount = $daysInMonth - ($presentCount + $halfDayCount + $leaveCount);
+
+//     // Salary calculation
+//     if ($employee->salary_type === 'monthly') {
+//         $perDay = $employee->salary_monthly / $daysInMonth;
+//     } else {
+//         $perDay = $employee->salary_daily;
+//     }
+
+//     $payPresent = $perDay * $presentCount;
+//     $payHalf    = ($perDay * 0.5) * $halfDayCount;
+
+//     $gross = round($payPresent + $payHalf, 2);
+//     $deductions = 0;
+//     $net = max(0, $gross - $deductions);
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => [
+//             'employee' => $employee,
+//             'month' => $month,
+//             'total_days' => $daysInMonth,
+//             'present' => $presentCount,
+//             'half_day' => $halfDayCount,
+//             'leave' => $leaveCount,
+//             'absent' => $absentCount,
+//             'gross' => $gross,
+//             'deductions' => $deductions,
+//             'net' => $net,
+//             'items' => [
+//                 ['title' => 'Present Days Pay', 'amount' => $payPresent],
+//                 ['title' => 'Half Days Pay', 'amount' => $payHalf],
+//             ]
+//         ]
+//     ]);
+// }
 public function calculate(Request $request)
 {
     $request->validate([
@@ -161,34 +223,47 @@ public function calculate(Request $request)
     $month = $request->month;
 
     $start = Carbon::parse($month . '-01')->startOfMonth();
-    $end = Carbon::parse($month . '-01')->endOfMonth();
+    $end   = Carbon::parse($month . '-01')->endOfMonth();
     $daysInMonth = $start->daysInMonth;
 
-    // Get attendance for the month
+    // 🔹 Attendance for the month
     $attendances = Attendance::where('employee_id', $employee->id)
-        ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+        ->whereBetween('date', [
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d')
+        ])
         ->get();
 
-    // ✔️ Correct numeric logic
-    $presentCount = $attendances->where('status', 1)->count();  // Present
-    $halfDayCount = $attendances->where('status', 2)->count();  // Half Day
-    $leaveCount   = $attendances->where('status', 0)->count();  // Leave
+    // 🔹 Attendance counts
+    $presentCount = $attendances->where('status', 1)->count(); // Present
+    $halfDayCount = $attendances->where('status', 2)->count(); // Half Day
+    $leaveCount   = $attendances->where('status', 0)->count(); // Leave
 
-    // ✔️ Absent = days without attendance record
+    // 🔹 Absent = days without attendance record
     $absentCount = $daysInMonth - ($presentCount + $halfDayCount + $leaveCount);
 
-    // Salary calculation
+    // 🔹 Per day salary
     if ($employee->salary_type === 'monthly') {
         $perDay = $employee->salary_monthly / $daysInMonth;
     } else {
         $perDay = $employee->salary_daily;
     }
 
+    // 🔹 Salary calculation
     $payPresent = $perDay * $presentCount;
     $payHalf    = ($perDay * 0.5) * $halfDayCount;
 
     $gross = round($payPresent + $payHalf, 2);
-    $deductions = 0;
+
+    // ======================================================
+    // 🔥 ADVANCE PAYMENT DEDUCTION LOGIC (ADDED)
+    // ======================================================
+    $advanceAmount = AdvancePayment::where('employee_id', $employee->id)
+        ->whereMonth('paid_at', $start->month)
+        ->whereYear('paid_at', $start->year)
+        ->sum('amount');
+
+    $deductions = $advanceAmount;
     $net = max(0, $gross - $deductions);
 
     return response()->json([
@@ -202,16 +277,17 @@ public function calculate(Request $request)
             'leave' => $leaveCount,
             'absent' => $absentCount,
             'gross' => $gross,
+            'advance_deduction' => $advanceAmount,
             'deductions' => $deductions,
             'net' => $net,
             'items' => [
-                ['title' => 'Present Days Pay', 'amount' => $payPresent],
-                ['title' => 'Half Days Pay', 'amount' => $payHalf],
+                ['title' => 'Present Days Pay', 'amount' => round($payPresent, 2)],
+                ['title' => 'Half Days Pay', 'amount' => round($payHalf, 2)],
+                ['title' => 'Advance Deduction', 'amount' => $advanceAmount],
             ]
         ]
     ]);
 }
-
     /**
      * Persist salary payment
      * POST: employee_id, month, date_paid (optional), payment_method, notes
@@ -272,7 +348,9 @@ public function calculate(Request $request)
      */
     public function slipPdf($id)
     {
-        $payment = SalaryPayment::with('employee','items')->findOrFail($id);
+        // $payment = SalaryPayment::with('employee','items')->findOrFail($id);
+        $payment = SalaryPayment::with(['employee', 'items', 'creator'])
+    ->findOrFail($id);
         $generatedAt = Carbon::now('Asia/Kolkata')->format('d-m-Y H:i:s');
 
         $pdf = Pdf::loadView('salary.pdf.slip', compact('payment','generatedAt'))->setPaper('a4','portrait');

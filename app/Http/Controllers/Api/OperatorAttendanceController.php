@@ -1053,92 +1053,201 @@ public function attendanceByEmployee(Request $request, $employee_id)
 
 public function monthlyAttendance(Request $request, $employee_id)
 {
-    $timezone = 'Asia/Kolkata'; // Set your local timezone
+    $timezone = 'Asia/Kolkata';
+    $now      = Carbon::now($timezone);
+    $today    = $now->toDateString();
 
-    // -----------------------------
-    // Determine query type: single date or whole month
-    // -----------------------------
-    $isSingleDate = false;
-
+    /*
+    |--------------------------------------------------------------------------
+    | CASE 1️⃣ : SINGLE DATE (Highest Priority)
+    |--------------------------------------------------------------------------
+    */
     if ($request->has('date')) {
         try {
-            $parsed = Carbon::parse($request->get('date'))->timezone($timezone);
-            $year  = $parsed->year;
-            $month = $parsed->month;
-            $isSingleDate = true; // Only one day
+            $date = Carbon::parse($request->date, $timezone)->toDateString();
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'error'  => 'Invalid date format. Use YYYY-MM-DD.'
+                'error'  => 'Invalid date format. Use YYYY-MM-DD'
             ], 400);
         }
-    } else {
-        $year  = (int) $request->get('year', date('Y'));
-        $month = (int) $request->get('month', date('m'));
-    }
 
-    $perPage = (int) $request->get('per_page', 31);
+        // ❌ Do not allow future date
+        if ($date > $today) {
+            return response()->json([
+                'status' => false,
+                'error'  => 'Future date not allowed'
+            ], 400);
+        }
 
-    // -----------------------------
-    // Restrict to current month + past 3 months
-    // -----------------------------
-    $allowedStart = Carbon::now($timezone)->startOfMonth()->subMonths(3);
-    $requestedMonth = Carbon::createFromDate($year, $month, 1, $timezone);
+        $attendance = Attendance::where('employee_id', $employee_id)
+            ->whereDate('date', $date)
+            ->first();
 
-    if ($requestedMonth->lt($allowedStart)) {
         return response()->json([
-            'status' => false,
-            'error'  => 'You can request attendance only for current month and past 3 months.'
-        ], 400);
+            'status' => true,
+            'range'  => 'single_date',
+            'data'   => [[
+                'date'      => $date,
+                'status'    => $attendance->status ?? null,
+                'clock_in'  => $attendance->clock_in ?? null,
+                'clock_out' => $attendance->clock_out ?? null,
+            ]],
+            'summary' => [
+                'present'  => $attendance?->status == 1 ? 1 : 0,
+                'leave'    => $attendance?->status == 0 ? 1 : 0,
+                'half_day' => $attendance?->status == 2 ? 1 : 0,
+            ]
+        ]);
     }
 
-    // -----------------------------
-    // Build attendance query
-    // -----------------------------
-    $query = Attendance::where('employee_id', $employee_id);
+    /*
+    |--------------------------------------------------------------------------
+    | CASE 2️⃣ : LAST 3 MONTHS
+    |--------------------------------------------------------------------------
+    */
+    if ($request->boolean('last_3_months')) {
 
-    if ($isSingleDate) {
-        // Only that specific day
-        $query->whereDate('date', $parsed->toDateString());
+        $startDate = $now->copy()->startOfMonth()->subMonths(2);
+        $endDate   = $now->copy()->toDateString(); // ⬅️ today only
+
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | CASE 3️⃣ : MONTH + YEAR
+    |--------------------------------------------------------------------------
+    */
+    else {
+
+        $year  = (int) $request->get('year', $now->year);
+        $month = (int) $request->get('month', $now->month);
+
+        $requestedMonth = Carbon::createFromDate($year, $month, 1, $timezone);
+
+        // ❌ Future month not allowed
+        if ($requestedMonth->gt($now)) {
+            return response()->json([
+                'status' => false,
+                'error'  => 'Future month data not allowed'
+            ], 400);
+        }
+
+        $startDate = $requestedMonth->copy()->startOfMonth();
+
+        // ✅ If current month → till today
+        if ($requestedMonth->isSameMonth($now)) {
+            $endDate = $now->toDateString();
+        } else {
+            $endDate = $requestedMonth->copy()->endOfMonth();
+        }
+
+        // ❌ Older than last 3 months
+        if ($startDate->lt($now->copy()->startOfMonth()->subMonths(3))) {
+            return response()->json([
+                'status' => false,
+                'error'  => 'You can request only current and last 3 months data'
+            ], 400);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch attendance
+    |--------------------------------------------------------------------------
+    */
+    $attendances = Attendance::where('employee_id', $employee_id)
+        ->whereBetween('date', [$startDate, $endDate])
+        ->orderBy('date')
+        ->orderBy('shift_type')
+        ->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fill missing dates
+    |--------------------------------------------------------------------------
+    */
+    // $data = [];
+    // for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+
+    //     $record = $attendances->firstWhere('date', $date->toDateString());
+
+    //     $data[] = [
+    //         'date'      => $date->toDateString(),
+    //         'status'    => $record->status ?? null,
+    //         'clock_in'  => $record->clock_in ?? null,
+    //         'clock_out' => $record->clock_out ?? null,
+    //     ];
+    // }
+$data = [];
+
+for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+
+    $dailyRecords = $attendances->filter(function ($att) use ($date) {
+        return Carbon::parse($att->date)->toDateString() === $date->toDateString();
+    });
+
+    $shifts = [];
+
+    if ($dailyRecords->isNotEmpty()) {
+
+        foreach ($dailyRecords as $record) {
+            $shifts[] = [
+                'shift_type' => $record->shift_type,
+                'slots' => [
+                    $record->slot1,
+                    $record->slot2,
+                    $record->slot3,
+                ],
+                'status'     => $record->status,
+                'clock_in'   => $record->clock_in,
+                'clock_out'  => $record->clock_out,
+                'machine_id' => $record->machine_id,
+            ];
+        }
+
     } else {
-        // Whole month
-        $startOfMonth = $requestedMonth->copy()->startOfMonth();
-        $endOfMonth   = $requestedMonth->copy()->endOfMonth();
-        $query->whereBetween('date', [$startOfMonth, $endOfMonth]);
+        // 👇 NO SHIFT FOUND → RETURN NULL VALUES
+        $shifts[] = [
+            'shift_type' => null,
+            'slots'      => [null, null, null],
+            'status'     => null,
+            'clock_in'   => null,
+            'clock_out'  => null,
+            'machine_id' => null,
+        ];
     }
 
-    $query->orderBy('date', 'asc');
-    $attendances = $query->paginate($perPage);
+    $data[] = [
+        'date'   => $date->toDateString(),
+        'shifts' => $shifts,
+    ];
+}
 
-    // -----------------------------
-    // Summary counts
-    // -----------------------------
-    $summaryQuery = clone $query;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Summary
+    |--------------------------------------------------------------------------
+    */
     $summary = [
-        'present'  => (clone $summaryQuery)->where('status', 1)->count(),
-        'leave'    => (clone $summaryQuery)->where('status', 0)->count(),
-        'half_day' => (clone $summaryQuery)->where('status', 2)->count(),
+        'present'  => $attendances->where('status', 1)->count(),
+        'leave'    => $attendances->where('status', 0)->count(),
+        'half_day' => $attendances->where('status', 2)->count(),
     ];
 
-    // -----------------------------
-    // Response
-    // -----------------------------
     return response()->json([
         'status' => true,
-        'year'   => $year,
-        'month'  => $month,
-        'data'   => $attendances->items(), // Only existing attendance records
+        'range'  => $request->boolean('last_3_months') ? 'last_3_months' : 'monthly',
+        'from'   => $startDate->toDateString(),
+        'to'     => $endDate,
+        'data'   => $data,
         'summary'=> $summary,
-        'pagination' => [
-            'total'        => $attendances->total(),
-            'per_page'     => $attendances->perPage(),
-            'current_page' => $attendances->currentPage(),
-            'last_page'    => $attendances->lastPage(),
-            'next_page_url'=> $attendances->nextPageUrl(),
-            'prev_page_url'=> $attendances->previousPageUrl(),
-        ],
     ]);
 }
+
+
+
+
 
 
 

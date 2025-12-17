@@ -36,7 +36,12 @@
 <div class="col-xxl-4 col-md-6 mb-4">
     <div class="card px-24 py-20 radius-12 border shadow-sm h-100">
         <h5 class="fw-bold mb-3">Import Attendance (Excel)</h5>
-
+<div class="mb-2">
+    <a href="{{ route('attendance.template.download') }}"
+       class="btn btn-sm btn-outline-primary">
+        ⬇ Download Attendance Excel Template
+    </a>
+</div>
         <form action="{{ route('attendance.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
 

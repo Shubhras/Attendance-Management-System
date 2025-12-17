@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData,Shift,Attendance};
+use App\Models\{User, Employee , Machine , Contractor,ThumbMachineData,Shift,Attendance,AdvancePayment,SalaryPayment};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -303,12 +303,65 @@ class OperatorAuthController extends Controller
 //         ],
 //     ]);
 // }
+private function getSalarySummary(Employee $employee, string $month)
+{
+    $start = Carbon::parse($month . '-01')->startOfMonth();
+    $end   = Carbon::parse($month . '-01')->endOfMonth();
+    $daysInMonth = $start->daysInMonth;
+
+    $attendances = Attendance::where('employee_id', $employee->id)
+        ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+        ->get();
+
+    $present = $attendances->where('status', 1)->count();
+    $halfDay = $attendances->where('status', 2)->count();
+    $leave   = $attendances->where('status', 0)->count();
+
+    $absent = $daysInMonth - ($present + $halfDay + $leave);
+
+    // Per day salary
+    if ($employee->salary_type === 'monthly') {
+        $perDay = $employee->salary_monthly / $daysInMonth;
+    } else {
+        $perDay = $employee->salary_daily;
+    }
+
+    $gross = round(
+        ($perDay * $present) + (($perDay * 0.5) * $halfDay),
+        2
+    );
+
+    // Advance deduction
+    $advance = AdvancePayment::where('employee_id', $employee->id)
+        ->whereMonth('paid_at', $start->month)
+        ->whereYear('paid_at', $start->year)
+        ->sum('amount');
+
+    $net = max(0, $gross - $advance);
+   // Check if salary has been paid
+    $isPaid = SalaryPayment::where('employee_id', $employee->id)
+        ->where('month', $month)
+        ->exists();
+    return [
+        'month' => $month,
+        'total_days' => $daysInMonth,
+        'present' => $present,
+        'half_day' => $halfDay,
+        'leave' => $leave,
+        'absent' => $absent,
+        'gross' => $gross,
+        'advance_payment' => $advance,
+        'net' => $net,
+        'isPaid' => $isPaid,
+    ];
+}
+
 public function getEmployees(Request $request)
 {
     $perPage = (int) $request->get('per_page', 10);
     $search = $request->get('search');
     $fingerprintStatus = $request->get('fingerprint_status'); // 'true' or 'false'
-
+    $month = $request->get('month', Carbon::now()->format('Y-m'));
     $query = Employee::with(['user:id,name,email','shift']);
 
     // Filter by fingerprint status if provided
@@ -330,6 +383,7 @@ public function getEmployees(Request $request)
         $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('mobile', 'like', "%{$search}%")
+              ->orWhere('employee_code', 'like', "%{$search}%")
               ->orWhereHas('user', function ($u) use ($search) {
                   $u->where('email', 'like', "%{$search}%");
               });
@@ -350,7 +404,8 @@ public function getEmployees(Request $request)
     $domain = rtrim(config('app.url'), '/');
 
     // Map employees
-    $employeesData = $employees->map(function ($employee) use ($domain) {
+    $employeesData = $employees->map(function ($employee) use ($domain,$month) {
+        
         $data = $employee->toArray();
         $data['photo'] = $employee->photo ? "{$domain}/{$employee->photo}" : null;
         $data['aadhar_card'] = $employee->aadhar_card ? "{$domain}/{$employee->aadhar_card}" : null;
@@ -361,6 +416,7 @@ public function getEmployees(Request $request)
             'clock_out_time' => $employee->shift->clock_out_time,
         ] : null;
         unset($data['shift_id']);
+         $data['salary_summary'] = $this->getSalarySummary($employee, $month);
         return $data;
     });
 
@@ -417,8 +473,9 @@ public function getEmployees(Request $request)
 //         'data' => $employeeData,
 //     ]);
 // }
-public function getEmployeeDetails($uuid)
+public function getEmployeeDetails(Request $request,$uuid)
 {
+    $month = $request->get('month', Carbon::now()->format('Y-m'));
     $employee = Employee::with([
             'user:id,name,email',
             'machine:id,name',
@@ -455,7 +512,9 @@ public function getEmployeeDetails($uuid)
 
     // Remove shift_id from API response if you don't want it
     unset($employeeData['shift_id']);
-
+   // 🔥 Salary Summary
+    $employeeData['salary_summary'] =
+        $this->getSalarySummary($employee, $month);
     return response()->json([
         'status' => true,
         'message' => 'Employee details fetched successfully',
@@ -729,12 +788,17 @@ public function getMachines(Request $request)
 // }
 public function getEmployeesByMachine(Request $request, $machine_id)
 {
-    $search = $request->get('search');
-    $perPage = (int) $request->get('per_page', 10);
-    $today = Carbon::today()->toDateString();
+    $search   = $request->get('search');
+    $perPage  = (int) $request->get('per_page', 10);
+    $today    = Carbon::today()->toDateString();
 
-    // If search includes employee_code like "EMP-09", search globally (ignore machine_id)
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH BY EMPLOYEE CODE (GLOBAL)
+    |--------------------------------------------------------------------------
+    */
     if ($search && preg_match('/^EMP-\d+$/i', trim($search))) {
+
         $employee = Employee::where('employee_code', 'LIKE', "%{$search}%")
             ->with('machine')
             ->first();
@@ -748,46 +812,56 @@ public function getEmployeesByMachine(Request $request, $machine_id)
             ], 404);
         }
 
-        // Get today's attendance
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('date', $today)
             ->first();
 
-        $today_status = $attendance ? (int)$attendance->status : 0;
+        $today_status = $attendance ? (int) $attendance->status : 0;
 
-        $employeeData = [
-            'id'            => $employee->id,
-            'uuid'          => $employee->uuid,
-            'employee_code' => $employee->employee_code,
-            'name'          => $employee->name,
-            'mobile'        => $employee->mobile,
-            'gender'        => $employee->gender,
-            'machine_id'    => $employee->machine_id,
-            'machine'       => optional($employee->machine)->name ?? 'Unassigned',
-            'salary_type'   => $employee->salary_type,
-            'salary_monthly'=> $employee->salary_monthly,
-            'salary_daily'  => $employee->salary_daily,
-            'employee_type' => $employee->employee_type,
-            'company_department' => $employee->company_department,
-            'photo'         => $employee->photo ? asset('employees/photos/' . basename($employee->photo)) : null,
-            'fingerprint'   => $employee->fingerprint,
-            'attendance_status' => $today_status,
-            'employee_work_title' => $employee->employee_work_title,
-            'joining_date'   => $employee->joining_date,
-            'aadhar_card'    => $employee->aadhar_card,
-            'created_at'     => $employee->created_at->format('Y-m-d H:i:s'),
-            'updated_at'     => $employee->updated_at->format('Y-m-d H:i:s'),
+        // ⭐ SLOTS
+        $slots = [
+            'slot1' => !is_null($attendance?->slot1),
+            'slot2' => !is_null($attendance?->slot2),
+            'slot3' => !is_null($attendance?->slot3),
         ];
 
         return response()->json([
             'status' => 200,
             'message' => 'Employee found by employee id',
-            'data' => [$employeeData], // Return as array for consistency
+            'data' => [[
+                'id'            => $employee->id,
+                'uuid'          => $employee->uuid,
+                'employee_code' => $employee->employee_code,
+                'name'          => $employee->name,
+                'mobile'        => $employee->mobile,
+                'gender'        => $employee->gender,
+                'machine_id'    => $employee->machine_id,
+                'machine'       => optional($employee->machine)->name ?? 'Unassigned',
+                'salary_type'   => $employee->salary_type,
+                'salary_monthly'=> $employee->salary_monthly,
+                'salary_daily'  => $employee->salary_daily,
+                'employee_type' => $employee->employee_type,
+                'company_department' => $employee->company_department,
+                'photo'         => $employee->photo ? asset('employees/photos/' . basename($employee->photo)) : null,
+                'fingerprint'   => $employee->fingerprint,
+                'fingerprint_template_data' => $employee->fingerprint_template_data,
+                'attendance_status' => $today_status,
+                'slots'         => $slots, // ⭐ ADDED
+                'employee_work_title' => $employee->employee_work_title,
+                'joining_date'  => $employee->joining_date,
+                'aadhar_card'   => $employee->aadhar_card,
+                'created_at'    => $employee->created_at->format('Y-m-d H:i:s'),
+                'updated_at'    => $employee->updated_at->format('Y-m-d H:i:s'),
+            ]],
             'pagination' => null
         ]);
     }
 
-    // Normal flow: Get employees under specific machine
+    /*
+    |--------------------------------------------------------------------------
+    | NORMAL FLOW (BY MACHINE)
+    |--------------------------------------------------------------------------
+    */
     $machine = Machine::find($machine_id);
     if (!$machine) {
         return response()->json([
@@ -798,8 +872,7 @@ public function getEmployeesByMachine(Request $request, $machine_id)
 
     $query = Employee::where('machine_id', $machine_id);
 
-    // Optional name/mobile search (but not employee_code)
-    if ($search && !preg_match('/^EMP-\d+$/i', trim($search))) {
+    if ($search) {
         $query->where(function ($q) use ($search) {
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('mobile', 'like', "%{$search}%");
@@ -809,11 +882,19 @@ public function getEmployeesByMachine(Request $request, $machine_id)
     $employees = $query->orderBy('id', 'desc')->paginate($perPage);
 
     $employeesData = $employees->map(function ($employee) use ($today) {
+
         $attendance = Attendance::where('employee_id', $employee->id)
             ->whereDate('date', $today)
             ->first();
 
-        $today_status = $attendance ? (int)$attendance->status : 0;
+        $today_status = $attendance ? (int) $attendance->status : 0;
+
+        // ⭐ SLOTS
+        $slots = [
+            'slot1' => !is_null($attendance?->slot1),
+            'slot2' => !is_null($attendance?->slot2),
+            'slot3' => !is_null($attendance?->slot3),
+        ];
 
         return [
             'id'            => $employee->id,
@@ -831,12 +912,14 @@ public function getEmployeesByMachine(Request $request, $machine_id)
             'company_department' => $employee->company_department,
             'photo'         => $employee->photo ? asset('employees/photos/' . basename($employee->photo)) : null,
             'fingerprint'   => $employee->fingerprint,
+            'fingerprint_template_data' => $employee->fingerprint_template_data,
             'attendance_status' => $today_status,
+            'slots'         => $slots, // ⭐ ADDED
             'employee_work_title' => $employee->employee_work_title,
-            'joining_date'   => $employee->joining_date,
-            'aadhar_card'    => $employee->aadhar_card,
-            'created_at'     => $employee->created_at->format('Y-m-d H:i:s'),
-            'updated_at'     => $employee->updated_at->format('Y-m-d H:i:s'),
+            'joining_date'  => $employee->joining_date,
+            'aadhar_card'   => $employee->aadhar_card,
+            'created_at'    => $employee->created_at->format('Y-m-d H:i:s'),
+            'updated_at'    => $employee->updated_at->format('Y-m-d H:i:s'),
         ];
     });
 
@@ -854,6 +937,7 @@ public function getEmployeesByMachine(Request $request, $machine_id)
         ],
     ]);
 }
+
 public function getTotalCounts()
 {
     return response()->json([

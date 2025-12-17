@@ -755,12 +755,89 @@ public function exportAll(Request $request)
 
 //     return view('attendance.summary', compact('employees', 'month', 'daysInMonth', 'attendanceMap'));
 // }
+// public function summary(Request $request)
+// {
+    
+//     $month = $request->get('month', Carbon::now()->format('Y-m'));
+//     $employeeId = $request->get('employee_id');
+//     $searchCode = $request->get('search_code');
+//     $start = Carbon::parse($month . '-01')->startOfMonth();
+//     $end   = Carbon::parse($month . '-01')->endOfMonth();
+//     $daysInMonth = $start->daysInMonth;
+
+//     // Employees
+//     $empQuery = Employee::orderBy('name');
+
+//     if ($employeeId) {
+//         $empQuery->where('id', $employeeId);
+//     }
+//        // Add search by employee code
+//     if ($searchCode) {
+//         $empQuery->where('employee_code', 'like', '%' . $searchCode . '%');
+//     }
+//     $employees = $empQuery->get();
+
+//     // Attendance
+//     $attQuery = Attendance::whereBetween('date', [$start, $end]);
+//     if ($employeeId) {
+//         $attQuery->where('employee_id', $employeeId);
+//     }
+//     $attendances = $attQuery->get();
+
+//     // Attendance Map
+//     $attendanceMap = [];
+
+//     foreach ($attendances as $a) {
+//         $day = Carbon::parse($a->date)->day;
+//         $hoursFormatted = null;
+
+//         if (!empty($a->clock_in) && !empty($a->clock_out) && $a->clock_in != "00:00:00" && $a->clock_out != "00:00:00") {
+
+//             // Parse clock_in
+//             $in = str_contains($a->clock_in, '-') ?
+//                 : Carbon::parse($a->clock_in);
+
+//             // Parse clock_out
+//             $out = str_contains($a->clock_out, '-') ?
+//                 : Carbon::parse($a->clock_out);
+
+//             // Night shift fix
+//             if ($out->lt($in)) {
+//                 $out->addDay();
+//             }
+
+//             $totalMins = $in->diffInMinutes($out);
+//             if ($totalMins < 0) $totalMins = 0;
+
+//             $h = floor($totalMins / 60);
+//             $m = $totalMins % 60;
+
+//             // Correct format: 03h 42min
+//             $hoursFormatted = sprintf("%02dh %02dmin", $h, $m);
+//             // print_r($hoursFormatted);die;
+//         }
+
+//         $attendanceMap[$a->employee_id][$day] = [
+//             'status' => (int)$a->status,
+//             'hours'  => $hoursFormatted
+//         ];
+//     }
+
+//     return view('attendance.summary', compact(
+//         'employees',
+//         'month',
+//         'daysInMonth',
+//         'attendanceMap'
+//     ));
+// }
+
+
 public function summary(Request $request)
 {
-    
     $month = $request->get('month', Carbon::now()->format('Y-m'));
     $employeeId = $request->get('employee_id');
     $searchCode = $request->get('search_code');
+
     $start = Carbon::parse($month . '-01')->startOfMonth();
     $end   = Carbon::parse($month . '-01')->endOfMonth();
     $daysInMonth = $start->daysInMonth;
@@ -771,10 +848,11 @@ public function summary(Request $request)
     if ($employeeId) {
         $empQuery->where('id', $employeeId);
     }
-       // Add search by employee code
+
     if ($searchCode) {
         $empQuery->where('employee_code', 'like', '%' . $searchCode . '%');
     }
+
     $employees = $empQuery->get();
 
     // Attendance
@@ -784,42 +862,44 @@ public function summary(Request $request)
     }
     $attendances = $attQuery->get();
 
-    // Attendance Map
+    // Slot Hour Definition
+    $slotHours = [
+        'morning' => [
+            'slot1' => 2,
+            'slot2' => 2,
+            'slot3' => 2,
+        ],
+        'night' => [
+            'slot1' => 2,
+            'slot2' => 4,
+            'slot3' => 6,
+        ],
+    ];
+
     $attendanceMap = [];
 
     foreach ($attendances as $a) {
         $day = Carbon::parse($a->date)->day;
-        $hoursFormatted = null;
+        $totalHours = 0;
 
-        if (!empty($a->clock_in) && !empty($a->clock_out) && $a->clock_in != "00:00:00" && $a->clock_out != "00:00:00") {
+        $shift = $a->shift_type ?? 'morning';
 
-            // Parse clock_in
-            $in = str_contains($a->clock_in, '-') ?
-                : Carbon::parse($a->clock_in);
-
-            // Parse clock_out
-            $out = str_contains($a->clock_out, '-') ?
-                : Carbon::parse($a->clock_out);
-
-            // Night shift fix
-            if ($out->lt($in)) {
-                $out->addDay();
+        if (!empty($slotHours[$shift])) {
+            foreach (['slot1', 'slot2', 'slot3'] as $slot) {
+                if (!is_null($a->$slot)) {
+                    $totalHours += $slotHours[$shift][$slot];
+                }
             }
-
-            $totalMins = $in->diffInMinutes($out);
-            if ($totalMins < 0) $totalMins = 0;
-
-            $h = floor($totalMins / 60);
-            $m = $totalMins % 60;
-
-            // Correct format: 03h 42min
-            $hoursFormatted = sprintf("%02dh %02dmin", $h, $m);
-            // print_r($hoursFormatted);die;
         }
 
+        // Format hours → "06h 00min"
+        $hoursFormatted = $totalHours > 0
+            ? sprintf('%02dh 00min', $totalHours)
+            : null;
+
         $attendanceMap[$a->employee_id][$day] = [
-            'status' => (int)$a->status,
-            'hours'  => $hoursFormatted
+            'status' => (int) $a->status,
+            'hours'  => $hoursFormatted,
         ];
     }
 
@@ -830,8 +910,6 @@ public function summary(Request $request)
         'attendanceMap'
     ));
 }
-
-
 
 
 

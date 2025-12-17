@@ -23,6 +23,12 @@
     <strong>Employee:</strong> {{ $payment->employee->name }} ({{ $payment->employee->employee_code }})<br/>
     <strong>Department:</strong> {{ $payment->employee->company_department ?? '-' }}<br/>
     <strong>Payment Date:</strong> {{ $payment->date_paid }}
+        <strong>Paid By:</strong>
+    @if($payment->creator)
+        {{ $payment->creator->name }} ({{ ucfirst($payment->creator->role) }})
+    @else
+        —
+    @endif
   </div>
 
   <table class="table">
