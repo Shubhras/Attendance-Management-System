@@ -1,31 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StatusBar,
   View,
 } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { widthPercentageToDP } from 'react-native-responsive-screen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { scale } from 'react-native-size-matters';
 import { useSelector } from 'react-redux';
 import { getEmployeeInfo } from '../../api/auth.js';
-import CustomDropdown from '../../components/CustomDropdown/index.js';
-import AddFingerPrintBottomSheet from '../../components/bottomSheet/AddFingerPrintBottomSheet';
 import Button from '../../components/buttons/Button/index.js';
 import { CustomText } from '../../components/global/CustomComponents.js';
-import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
+import { FONT_SIZE_XXS, POPPINS_REGULAR } from '../../config/Constants.js';
 import styles from './styles.js';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FONT_SIZE_MD, FONT_SIZE_XS, FONT_SIZE_XXS, POPPINS_REGULAR } from '../../config/Constants.js';
+import HrVerifyFingerPrintBottomSheet from '../../components/bottomSheet/HrVerifyFingerPrintBottomSheet';
 
-const EmployeeInfoScreen = ({ navigation, route }) => {
+const HrEmployeeInfoScreen = ({ navigation, route }) => {
   const { FirngerPrint, MyEmployee, item } = route.params;
 
-  // console.log('itemxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', item);
+  console.log('itemxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', item);
 
   const bottomSheetRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +55,6 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
     return `${shiftObj.shift_name} • ${start} - ${end}`;
   };
 
-  console.log('user222222222', item);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       getEmployee();
@@ -87,6 +84,7 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
           error?.message || 'Something went wrong. Please try again.',
         type: 'danger',
       });
+      console.log('error', error);
     } finally {
       setLoading(false);
     }
@@ -179,7 +177,7 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
             </View>
 
             {/* Employee Info Rows */}
-            {/* <View style={styles.row}>
+            <View style={styles.row}>
               <CustomText
                 style={[
                   styles.title,
@@ -196,7 +194,7 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                       { color: LightThemeColors.textLowContrast },
                     ]}
                   >
-                    {employee?.salary_daily} ₹ /{employee?.salary_type}
+                    ₹ {employee?.salary_daily} /{employee?.salary_type}
                   </CustomText>
                 ) : (
                   <CustomText
@@ -205,11 +203,11 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                       { color: LightThemeColors.textLowContrast },
                     ]}
                   >
-                    {employee?.salary_monthly} ₹ /{employee?.salary_type}
+                    ₹ {employee?.salary_monthly} /{employee?.salary_type}
                   </CustomText>
                 )}
               </View>
-            </View> */}
+            </View>
 
             <View style={styles.row}>
               <CustomText
@@ -404,8 +402,221 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                 </View>
               </View>
             )}
-
-            {!FirngerPrint && (
+            <View
+              style={{
+                borderBottomWidth: 1,
+                borderColor: Colors.inactive,
+                paddingTop: 10,
+              }}
+            />
+            <View style={styles.row}>
+              <CustomText style={[styles.title, { color: Colors.green }]}>
+                Calculate & Pay
+              </CustomText>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Total Days:
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                    },
+                  ]}
+                >
+                  {employee?.salary_summary?.total_days ?? 0}
+                </CustomText>
+              </View>
+            </View>
+            {/* <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Present Days:
+              </CustomText>
+              <View style={styles.valueWrapper}>
+              <CustomText
+                  style={[
+                    styles.value,
+                    { color: LightThemeColors.textLowContrast, textDecorationLine: 'none',  },
+                  ]}
+                >
+                  {employee?.salary_summary?.present ?? 0}
+                </CustomText>
+              </View>
+            </View> */}
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Half Days:
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                    },
+                  ]}
+                >
+                  {employee?.salary_summary?.half_day ?? 0}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Leave Days:
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                    },
+                  ]}
+                >
+                  {employee?.salary_summary?.leave ?? 0}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  { color: LightThemeColors.textHighContrast },
+                ]}
+              >
+                Absent Days:
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                    },
+                  ]}
+                >
+                  {employee?.salary_summary?.absent ?? 0}
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  {
+                    color: LightThemeColors.textHighContrast,
+                    width: widthPercentageToDP('55'),
+                  },
+                ]}
+              >
+                {`This month payment:`}
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                      width: widthPercentageToDP('36'),
+                    },
+                  ]}
+                >
+                  ₹
+                  {parseFloat(employee?.salary_summary?.gross)?.toFixed(2) ??
+                    '0.00'}
+                  /-
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  {
+                    color: LightThemeColors.textHighContrast,
+                    width: widthPercentageToDP('49'),
+                  },
+                ]}
+              >
+                {`Advanced Payment:`}
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      textDecorationLine: 'none',
+                      width: widthPercentageToDP('40'),
+                    },
+                  ]}
+                >
+                  ₹
+                  {parseFloat(
+                    employee?.salary_summary?.advance_payment,
+                  )?.toFixed(2) ?? '0.00'}
+                  /-
+                </CustomText>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <CustomText
+                style={[
+                  styles.title,
+                  {
+                    color: LightThemeColors.textHighContrast,
+                    width: widthPercentageToDP('45'),
+                  },
+                ]}
+              >
+                {`Total Amount Pay:`}
+              </CustomText>
+              <View style={styles.valueWrapper}>
+                <CustomText
+                  style={[
+                    styles.value,
+                    {
+                      color: LightThemeColors.textLowContrast,
+                      width: widthPercentageToDP('45'),
+                    },
+                  ]}
+                >
+                  ₹
+                  {parseFloat(employee?.salary_summary?.net)?.toFixed(2) ??
+                    '0.00'}
+                  /-
+                </CustomText>
+              </View>
+            </View>
+            {/* {!FirngerPrint && (
               <View style={styles.buttonWrapper}>
                 <Button
                   label={'Attendance List'}
@@ -425,52 +636,40 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
                   }}
                 />
               </View>
-            )}
+            )} */}
 
-            {FirngerPrint && (
-              <>
-                <View style={styles.selectDropdown}>
-                  <CustomDropdown
-                    label="Select Hand"
-                    value={selectHand}
-                    placeholder="Select Hand"
-                    options={Hand}
-                    onSelect={value => setSelectHand(value)}
-                  />
-                </View>
-
-                <View style={styles.selectDropdown}>
-                  <CustomDropdown
-                    label="Select Finger"
-                    value={selectFinger}
-                    placeholder="Select Hand"
-                    options={Finger}
-                    onSelect={value => setSelectFinger(value)}
-                  />
-                </View>
-
-                <View style={styles.buttonWrapper}>
-                  <Button
-                    label={'Add FingerPrint'}
-                    labelColor={Colors.white}
-                    backgroundColor={LightThemeColors.titleColor}
-                    onPress={() => {
-                      // setReset(true)
-                      bottomSheetRef.current?.expand();
-                    }}
-                  />
-                </View>
-              </>
-            )}
+            <>
+              <View style={styles.buttonWrapper}>
+                <Button
+                  label={`Pay - ₹ ${
+                    parseFloat(employee?.salary_summary?.net)?.toFixed(2) ??
+                    '0.00'
+                  }/- `}
+                  labelColor={Colors.white}
+                  backgroundColor={LightThemeColors.titleColor}
+                  onPress={() => {
+                    if (item?.salary_summary?.isPaid) {
+                      alert('This month’s salary has already been paid.');
+                      return;
+                    }
+                    // setReset(true)
+                    bottomSheetRef.current?.expand();
+                  }}
+                />
+              </View>
+            </>
           </ScrollView>
         )}
       </View>
-      <AddFingerPrintBottomSheet
+      <HrVerifyFingerPrintBottomSheet
         sheetRef={bottomSheetRef}
         userId={item?.id}
         // reset={reset}
+        captureFingerPrint={employee?.fingerprint_template_data?.captureTemplet}
         HandType={selectHand}
         FingerType={selectFinger}
+        salaryAmount={employee?.salary_summary?.net}
+        machineID={employee?.machine_id}
         token={token}
         onCancel={() => {
           bottomSheetRef.current?.close();
@@ -485,4 +684,4 @@ const EmployeeInfoScreen = ({ navigation, route }) => {
   );
 };
 
-export default EmployeeInfoScreen;
+export default HrEmployeeInfoScreen;

@@ -34,24 +34,24 @@ export const getHomeData = countData => {
       defaultSource: Machine,
       onPress: 'MyMachine',
     },
-    {
-      id: 4,
-      title: 'Full Employees Report',
-      subtitle: 'Date',
-      subtitleValue: countData?.current_date || '',
-      icon: require('../assets/images/Animation/Report.gif'),
-      defaultSource: Report,
-      onPress: 'MyExport',
-    },
-    {
-      id: 5,
-      title: 'Report By Contractors',
-      subtitle: 'Total Contractors',
-      subtitleValue: countData?.contractor_count || 0,
-      icon: require('../assets/images/Animation/Contractors.gif'),
-      defaultSource: Contractors,
-      onPress: 'ContractorListScreen',
-    },
+    // {
+    //   id: 4,
+    //   title: 'Full Employees Report',
+    //   subtitle: 'Date',
+    //   subtitleValue: countData?.current_date || '',
+    //   icon: require('../assets/images/Animation/Report.gif'),
+    //   defaultSource: Report,
+    //   onPress: 'MyExport',
+    // },
+    // {
+    //   id: 5,
+    //   title: 'Report By Contractors',
+    //   subtitle: 'Total Contractors',
+    //   subtitleValue: countData?.contractor_count || 0,
+    //   icon: require('../assets/images/Animation/Contractors.gif'),
+    //   defaultSource: Contractors,
+    //   onPress: 'ContractorListScreen',
+    // },
     {
       id: 6,
       title: 'Add Fingerprint',
@@ -61,6 +61,21 @@ export const getHomeData = countData => {
       defaultSource: Fingerprint,
       onPress: 'FingerPrintEmployeeList',
     },
+  ];
+};
+
+export const getHrHomeData = countData => {
+  return [
+    {
+      id: 1,
+      title: `Pay Salary \nEmployees`,
+      subtitle: 'Total Employees',
+      icon: require('../assets/images/Animation/Employee.gif'),
+      defaultSource: Employee,
+      onPress: 'HrEmployeeScreen',
+      subtitleValue: countData?.employees_count || 0,
+    },
+    
   ];
 };
 

@@ -124,7 +124,7 @@ import { CustomText } from '../../global/CustomComponents';
 import Button from '../../buttons/Button';
 import Morfin from '../../../../MorfinAuth';
 import { AddFingerPrint, AttendanceMark } from '../../../api/auth';
-import {Images} from '../../../constants/images';
+import { Images } from '../../../constants/images';
 
 const AttendanceBottomSheet = ({
   sheetRef,
@@ -135,10 +135,11 @@ const AttendanceBottomSheet = ({
   FingerType,
   captureFingerPrint,
   userAttendanceMark,
+  machineID,
 }) => {
   const [attendance, setAttendance] = useState(false);
   const [status, setStatus] = useState('');
-  const [wrongFinger, setWrongFinger] = useState(false)
+  const [wrongFinger, setWrongFinger] = useState(false);
   const [fingerImage, setFingerImage] = useState('');
   const [captureTemplet, setCaptureTemplet] = useState('');
   const [loading, setLoading] = useState(false);
@@ -207,11 +208,13 @@ const AttendanceBottomSheet = ({
 
   const FingerPrintEmployee = async payload => {
     const data = {
-      date:  Date().toString(),
+      date: Date().toString(),
       employee_id: userId,
       status: 1,
+      scan_status: 1,
       clock_in: '',
       clock_out: '',
+      machine_id: machineID,
     };
     console.log('data', data);
 
@@ -220,11 +223,15 @@ const AttendanceBottomSheet = ({
         console.log('GetEmployeesWithoutFingerprint', response);
         setLoading(false);
         setAttendance(true);
-        userAttendanceMark(response?.data?.id);  
+        userAttendanceMark(response?.data?.id);
       })
       .catch(error => {
         console.log('error', error);
-        setStatus('Error server: ', +error?.message);
+        setStatus(
+          `Server error: ${
+            error?.message?.toString() ?? 'Try after some time.'
+          }`,
+        );
         setLoading(false);
         setAttendance(false);
       });
@@ -242,6 +249,7 @@ const AttendanceBottomSheet = ({
           setAttendance(false);
           setStatus('');
           setFingerImage('');
+          onCancel();
         }}
       />
     ),
@@ -269,12 +277,12 @@ const AttendanceBottomSheet = ({
         {attendance ? (
           <View style={styles.card}>
             <View style={styles.imageContainer}>
-             <FastImage
-              source={Images.FingerprintSuccess}
-              defaultSource={FingerPrintSuccess}
-              style={styles.image}
-              resizeMode="cover"
-            />
+              <FastImage
+                source={Images.FingerprintSuccess}
+                defaultSource={FingerPrintSuccess}
+                style={styles.image}
+                resizeMode="cover"
+              />
             </View>
             <CustomText
               style={[
@@ -301,20 +309,22 @@ const AttendanceBottomSheet = ({
         ) : (
           <>
             <View style={styles.imageContainer}>
-             <FastImage
-              source={
-                fingerImage
-                  ? {
-                      uri: `data:image/png;base64,${fingerImage}`,
-                      priority: FastImage.priority.high,
-                    }
-                  : wrongFinger ? Images.WrongFingerPrint : Images.FingerPrintScan
-              }
-              defaultSource={wrongFinger ? WrongFingerprint : FingerPrintScan}
-              style={styles.image}
-              resizeMode="cover"
-            />
-           </View>
+              <FastImage
+                source={
+                  fingerImage
+                    ? {
+                        uri: `data:image/png;base64,${fingerImage}`,
+                        priority: FastImage.priority.high,
+                      }
+                    : wrongFinger
+                    ? Images.WrongFingerPrint
+                    : Images.FingerPrintScan
+                }
+                defaultSource={wrongFinger ? WrongFingerprint : FingerPrintScan}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            </View>
             <CustomText
               style={[styles.title, { color: LightThemeColors.titleColor }]}
             >

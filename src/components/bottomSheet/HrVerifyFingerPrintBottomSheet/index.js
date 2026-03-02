@@ -14,25 +14,34 @@ import { Colors, LightThemeColors } from '../../../config/Colors';
 import { CustomText } from '../../global/CustomComponents';
 import Button from '../../buttons/Button';
 import Morfin from '../../../../MorfinAuth';
-import { AddFingerPrint } from '../../../api/auth';
+import { AddFingerPrint, hrPaySalary } from '../../../api/auth';
 import { Images } from '../../../constants/images';
 
-const AddFingerPrintBottomSheet = ({
+const HrVerifyFingerPrintBottomSheet = ({
   sheetRef,
   onCancel,
   token,
   userId,
   HandType,
   FingerType,
-  onUpdatedFinger
+  onUpdatedFinger,
+  salaryAmount,
+  machineID,
+  captureFingerPrint
 }) => {
   const [attendance, setAttendance] = useState(false);
   const [status, setStatus] = useState('');
+  const [wrongFinger, setWrongFinger] = useState(false)
   const [fingerImage, setFingerImage] = useState('');
+  const [captureTemplet, setCaptureTemplet] = useState('');
   const [loading, setLoading] = useState(false);
 
   const onCaptureFinger = async () => {
+    // FingerPrintEmployee();
+    // return;
     setStatus('');
+    setWrongFinger(false);
+    setFingerImage('');
     setLoading(true);
     try {
       setStatus('Checking device...');
@@ -42,9 +51,11 @@ const AddFingerPrintBottomSheet = ({
       if (!connected) {
         setStatus('Device not connected');
         setLoading(false);
+        setWrongFinger(true);
         return;
       } else {
         setStatus('');
+        setWrongFinger(false);
       }
 
       const info = await Morfin.initDevice();
@@ -58,61 +69,48 @@ const AddFingerPrintBottomSheet = ({
       const image = await Morfin.getImage();
       setFingerImage(image);
       setTimeout(() => {
-        const payload = {
-          connected: connected,
-          deviceInfo: info,
-          captureResult: result,
-          captureTemplet: template,
-          captureImage: image,
-          handType: HandType,
-          fingerType: FingerType,
-        };
-        FingerPrintEmployee(payload);
+        verifyMatch(template);
+        setCaptureTemplet(template);
       }, 3000);
     } catch (e) {
       console.log(e);
       setLoading(false);
-      setStatus('Error: ' + e.message);
+      setWrongFinger(true);
+      setStatus('Error machine: ' + JSON.stringify(e));
     }
   };
 
-  // const verifyMatch = async () => {
-  //   if (!template1 || !template2)
-  //     return setStatus("Scan both fingers first!");
+  const verifyMatch = async template => {
+    if (!template) return setStatus('Scan fingers first!');
 
-  //   const score = await Morfin.matchTemplates(template1, template2);
-  //   console.log("Match Score:", score);
-  //   setVerifyText(JSON.stringify(score))
-  //   if (score?.score > 120) {
-  //     setStatus("MATCHED: Same Finger 🎉");
-  //   } else {
-  //     setStatus("NOT MATCHED ❌");
-  //   }
-  // };
+    const score = await Morfin.matchTemplates(captureFingerPrint, template);
+    console.log('Match Score:', score);
 
-  // const handleAPI = fingData => {
-  //   const payload = {
-  //     thumb_template_data: fingData,
-  //     user
-  //   };
-  //   fingerPrintAdd(payload)
-  //     .then(res => {
-  //       console.log(res, 'FINGER CAPTURE');
-
-  //       setTxt(JSON.stringify(res));
-  //     })
-  //     .catch(err => {
-  //       console.log(err, 'ERROR_FINGER_CAPTURE');
-  //       setTxt(JSON.stringify(err));
-  //     });
-  // };
+    if (score?.score > 120) {
+      setWrongFinger(false);
+      FingerPrintEmployee();
+    } else {
+      setFingerImage('');
+      setStatus('NOT MATCHED ❌');
+      setWrongFinger(true);
+      setLoading(false);
+      setAttendance(false);
+    }
+  };
 
   const FingerPrintEmployee = async payload => {
-    const data = {
+    // const data = {
+    //   employee_id: userId,
+    //   amount: salaryAmount,
+    // };
+    var data = {
       employee_id: userId,
-      template_data: payload,
+      amount: salaryAmount,
+      // machine_id: machineID,
+      thumb_verified: true,
+      // reason: '',
     };
-    AddFingerPrint(token, data)
+    hrPaySalary(token, data)
       .then(response => {
         console.log('GetEmployeesWithoutFingerprint', response);
         setLoading(false);
@@ -126,7 +124,7 @@ const AddFingerPrintBottomSheet = ({
         }, 4000);
       })
       .catch(error => {
-        console.log('error', error);
+        console.log('error',  error?.message?.toString() );
         setStatus(`Server error: ${error?.message?.toString() ?? 'Try after some time.'}`);
         setLoading(false);
         setAttendance(false);
@@ -172,12 +170,12 @@ const AddFingerPrintBottomSheet = ({
         {attendance ? (
           <View style={styles.card}>
             <View style={styles.imageContainer}>
-              <FastImage
-                source={Images.FingerprintSuccess}
-                defaultSource={FingerPrintSuccess}
-                style={styles.image}
-                resizeMode="cover"
-              />
+             <FastImage
+              source={Images.FingerprintSuccess}
+              defaultSource={FingerPrintSuccess}
+              style={styles.image}
+              resizeMode="cover"
+            />
             </View>
             <CustomText
               style={[
@@ -185,7 +183,7 @@ const AddFingerPrintBottomSheet = ({
                 { color: LightThemeColors.titleColor },
               ]}
             >
-              Great! Your fingerprint is added successfully.
+              Salary paid successfully
             </CustomText>
             <Button
               label={'Go Back'}
@@ -204,24 +202,32 @@ const AddFingerPrintBottomSheet = ({
         ) : (
           <>
             <View style={styles.imageContainer}>
-              <FastImage
-                source={
-                  fingerImage
-                    ? {
-                        uri: `data:image/png;base64,${fingerImage}`,
-                        priority: FastImage.priority.high,
-                      }
-                    : Images.FingerPrintScan
-                }
-                defaultSource={FingerPrintScan}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            </View>
+             <FastImage
+              source={
+                fingerImage
+                  ? {
+                      uri: `data:image/png;base64,${fingerImage}`,
+                      priority: FastImage.priority.high,
+                    }
+                  : wrongFinger ? Images.WrongFingerPrint : Images.FingerPrintScan
+              }
+              defaultSource={wrongFinger ? WrongFingerprint : FingerPrintScan}
+              style={styles.image}
+              resizeMode="cover"
+            />
+           </View>
             <CustomText
               style={[styles.title, { color: LightThemeColors.titleColor }]}
             >
               Place your finger on the scanner
+            </CustomText>
+            <CustomText
+              style={[
+                styles.fingerTitle,
+                { color: LightThemeColors.titleColor },
+              ]}
+            >
+              {`${HandType} - ${FingerType}`}
             </CustomText>
             {status && (
               <CustomText style={[styles.title, { color: Colors?.error }]}>
@@ -251,4 +257,4 @@ const AddFingerPrintBottomSheet = ({
   );
 };
 
-export default AddFingerPrintBottomSheet;
+export default HrVerifyFingerPrintBottomSheet;

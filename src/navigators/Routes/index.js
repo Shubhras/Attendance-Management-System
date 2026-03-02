@@ -7,6 +7,8 @@ import EditProfileScreen from '../../screens/EditProfileScreen/index.js';
 import EmployeeAttendanceView from '../../screens/EmployeeAttendanceView';
 import EmployeeInfoScreen from '../../screens/EmployeeInfoScreen/index.js';
 import FingerPrintEmployeeList from '../../screens/FingerPrintEmployeeList';
+import HrEmployeeScreen from '../../screens/HrEmployeeScreen';
+import HrEmployeeInfoScreen from '../../screens/HrEmployeeInfoScreen';
 import HomeScreen from '../../screens/HomeScreen/index.js';
 import LogInScreen from '../../screens/LogInScreen/index.js';
 import MachineEmployeeList from '../../screens/MachineEmployeeList';
@@ -123,6 +125,16 @@ const Routes = () => {
       <Stack.Screen
         name="FingerPrintEmployeeList"
         component={FingerPrintEmployeeList}
+        options={{ headerShown: false, animation: 'none' }}
+      />
+      <Stack.Screen
+        name="HrEmployeeScreen"
+        component={HrEmployeeScreen}
+        options={{ headerShown: false, animation: 'none' }}
+      />
+      <Stack.Screen
+        name="HrEmployeeInfoScreen"
+        component={HrEmployeeInfoScreen}
         options={{ headerShown: false, animation: 'none' }}
       />
     </Stack.Navigator>

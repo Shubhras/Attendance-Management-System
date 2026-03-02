@@ -303,9 +303,9 @@ import { Images } from '../../constants/images.js';
 
 const Filters = [
   { key: 'all', level: 'All' },
-  { key: 'present', level: 'Present' },
-  { key: 'absent', level: 'Absent' },
-  { key: 'half_day', level: 'Half-day' },
+  { key: '1', level: 'Present' },
+  { key: '0', level: 'Absent' },
+  { key: '2', level: 'Half-day' },
 ];
 
 const EmployeeAttendanceView = ({ route }) => {
@@ -313,6 +313,7 @@ const EmployeeAttendanceView = ({ route }) => {
 
   const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [filterAttendanceData, setFilterAttendanceData] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [currentMoment, setCurrentMoment] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -352,17 +353,9 @@ const EmployeeAttendanceView = ({ route }) => {
   };
 
   // Fetch attendance data
-  const getMonthReport = selectedMoment => {
-    if (!id || !selectedMoment) {
-      console.log('Missing required parameters');
-      return;
-    }
-
-    const monthParam = selectedMoment.format('MM');
-    const yearParam = selectedMoment.format('YYYY');
-
+  const getMonthReport = (monthParam, yearParam) => {
     setLoading(true);
-
+    setShowPicker(false);
     MonthlyEmpReport({
       token,
       id,
@@ -374,27 +367,28 @@ const EmployeeAttendanceView = ({ route }) => {
 
         if (response?.status === true) {
           // Format attendance data from API response
-          const formattedData = (response?.data || []).map(item => {
-            const attendanceDate = moment(item.date);
-            const status = getStatusText(
-              item.status,
-              item.clock_in,
-              item.clock_out,
-            );
+          // const formattedData = (response?.data || []).map(item => {
+          //   const attendanceDate = moment(item.date);
+          //   const status = getStatusText(
+          //     item.status,
+          //     item.clock_in,
+          //     item.clock_out,
+          //   );
 
-            return {
-              id: item.id,
-              date: attendanceDate.format('YYYY-MM-DD'),
-              day: attendanceDate.format('ddd'),
-              time_in: formatTime(item.clock_in),
-              time_out: formatTime(item.clock_out),
-              status: status,
-              raw_status: item.status,
-              scan_status: item.scan_status,
-            };
-          });
+          //   return {
+          //     id: item.id,
+          //     date: attendanceDate.format('YYYY-MM-DD'),
+          //     day: attendanceDate.format('ddd'),
+          //     time_in: formatTime(item.clock_in),
+          //     time_out: formatTime(item.clock_out),
+          //     status: status,
+          //     raw_status: item.status,
+          //     scan_status: item.scan_status,
+          //   };
+          // });
 
-          setAttendanceData(formattedData);
+          setAttendanceData(response?.data);
+          setFilterAttendanceData(response?.data);
 
           // Set summary data
           if (response?.summary) {
@@ -408,6 +402,7 @@ const EmployeeAttendanceView = ({ route }) => {
             type: 'danger',
           });
           setAttendanceData([]);
+          setFilterAttendanceData([]);
           setSummary({ present: 0, leave: 0, half_day: 0 });
         }
         setLoading(false);
@@ -421,6 +416,7 @@ const EmployeeAttendanceView = ({ route }) => {
           type: 'danger',
         });
         setAttendanceData([]);
+        setFilterAttendanceData([]);
         setSummary({ present: 0, leave: 0, half_day: 0 });
         setLoading(false);
       });
@@ -428,18 +424,20 @@ const EmployeeAttendanceView = ({ route }) => {
 
   // Fetch data when currentMoment changes
   useEffect(() => {
-    if (currentMoment) {
-      getMonthReport(currentMoment);
-    }
-  }, [currentMoment]);
+    // if (currentMoment) {
+    const monthParam = moment(Date().toString()).format('MM');
+    const yearParam = moment(Date().toString()).format('YYYY');
+    getMonthReport(monthParam, yearParam);
+    // }
+  }, []);
 
   // Filter attendance data
-  const filteredData = attendanceData.filter(item => {
-    if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'half_day')
-      return item?.status?.toLowerCase() === 'half day';
-    return item?.status?.toLowerCase() === selectedFilter;
-  });
+  // const filteredData = attendanceData.filter(item => {
+  //   if (selectedFilter === 'all') return true;
+  //   if (selectedFilter === 'half_day')
+  //     return item?.status?.toLowerCase() === 'half day';
+  //   return item?.status?.toLowerCase() === selectedFilter;
+  // });
 
   // Handle month navigation
   const handlePrevMonth = () => {
@@ -488,6 +486,9 @@ const EmployeeAttendanceView = ({ route }) => {
   const onMonthChange = (event, newDate) => {
     if (event === 'dateSetAction' && newDate) {
       setCurrentMoment(moment(newDate));
+      const monthParam = moment(newDate).format('MM');
+      const yearParam = moment(newDate).format('YYYY');
+      getMonthReport(monthParam, yearParam);
     }
     setShowPicker(false);
   };
@@ -510,11 +511,12 @@ const EmployeeAttendanceView = ({ route }) => {
 
   const renderItem = ({ item }) => (
     <DayDetailsCard
-      status={item?.status}
-      time_in={item?.time_in}
-      time_out={item?.time_out}
+      status={item?.shifts[0]?.status?.toString()}
+      time_in={item?.clock_in}
+      time_out={item?.clock_out}
       date={item?.date}
-      day={item?.day}
+      slots={item?.shifts[0]?.slots ?? []}
+      day={moment(item?.date).format('ddd')}
     />
   );
 
@@ -557,12 +559,14 @@ const EmployeeAttendanceView = ({ route }) => {
 
         {/* Month Navigation */}
         <View style={styles.monthNavigator}>
-          <Pressable onPress={handlePrevMonth} disabled={isPrevDisabled()}>
+          <Pressable onPress={() => {}} disabled={true}>
+            {/* <Pressable onPress={handlePrevMonth} disabled={isPrevDisabled()}> */}
             <Icons
               name="chevron-back-sharp"
               iconType="Ionicons"
               size={scale(22)}
-              color={isPrevDisabled() ? Colors.lightgary : Colors.black}
+              // color={isPrevDisabled() ? Colors.lightgary : Colors.black}
+              color={Colors.lightgary}
             />
           </Pressable>
 
@@ -572,12 +576,14 @@ const EmployeeAttendanceView = ({ route }) => {
             </CustomText>
           </Pressable>
 
-          <Pressable onPress={handleNextMonth} disabled={isNextDisabled()}>
+          {/* <Pressable onPress={handleNextMonth} disabled={isNextDisabled()}> */}
+          <Pressable onPress={() => {}} disabled={true}>
             <Icons
               name="chevron-forward-sharp"
               iconType="Ionicons"
               size={scale(22)}
-              color={isNextDisabled() ? Colors.lightgary : Colors.black}
+              color={Colors.lightgary}
+              // color={isNextDisabled() ? Colors.lightgary : Colors.black}
             />
           </Pressable>
         </View>
@@ -589,7 +595,18 @@ const EmployeeAttendanceView = ({ route }) => {
             return (
               <Pressable
                 key={item.key}
-                onPress={() => setSelectedFilter(item.key)}
+                onPress={() => {
+                  setSelectedFilter(item.key);
+                  if (item.key == 'all') {
+                    setFilterAttendanceData(attendanceData);
+                  } else {
+                    const filterData = attendanceData.filter(
+                      fil => fil?.shifts[0]?.status?.toString() == item.key,
+                    );
+                    console.log('filterDatafilterDatafilterData', filterData);
+                    setFilterAttendanceData(filterData);
+                  }
+                }}
                 style={[
                   styles.filterButton,
                   {
@@ -635,12 +652,12 @@ const EmployeeAttendanceView = ({ route }) => {
           /* Attendance List */
           <FlatList
             style={styles.flateList}
-            data={filteredData}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
+            data={filterAttendanceData}
+            keyExtractor={(item, index) => `attend-${index}`}
             renderItem={renderItem}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={
-              filteredData.length === 0
+              filterAttendanceData.length === 0
                 ? styles.contentContainerStyleEmpty
                 : styles.contentContainerStyle
             }

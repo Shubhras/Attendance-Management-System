@@ -12,7 +12,7 @@ import { CustomText } from '../../components/global/CustomComponents.js';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView.tsx';
 import Header from '../../components/header/index.js';
 import { Colors, LightThemeColors } from '../../config/Colors.js';
-import { getHomeData } from '../../data/Homedata.js';
+import { getHomeData, getHrHomeData } from '../../data/Homedata.js';
 import styles from './styles.js';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -61,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
     }, [HomeCountApi]), // Make sure to include HomeCountApi in dependencies
   );
 
-  const homeData = getHomeData(countData);
+  const homeData = user?.user?.role == 'hr'? getHrHomeData(countData)  : getHomeData(countData);
 
   const ListHeader = () => {
     return (

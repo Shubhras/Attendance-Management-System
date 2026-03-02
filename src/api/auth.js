@@ -144,6 +144,8 @@ export const getEmployeeInfo = async (token, id) => {
         Authorization: `Bearer ${token}`,
       },
     };
+    console.log("configconfig",config);
+    
     axios
       .request(config)
       .then(response => {
@@ -337,12 +339,45 @@ export const MonthlyEmpReport = async ({token, id, year, date='', month=''}) => 
   return new Promise((resolve, reject) => {
     const config = {
       method: 'GET',
-      url: `${API_URL}/api/operator/employees/${id}/attendance/monthly?year${year}&date=${date}&month=${month}`,
+      url: `${API_URL}/api/operator/employees/${id}/attendance/monthly?year${year}&month=${month}`,
       headers: {
         'Content-Type': 'Application/json',
         Authorization: `Bearer ${token}`,
       },
     };
+    console.log("configconfigconfig",config);
+    
+    axios
+      .request(config)
+      .then(response => {
+        resolve(response.data);
+      })
+      .catch(error => {
+        if (error.response) {
+          reject(error.response.data);
+        } else if (error.request) {
+          reject(error);
+        } else {
+          reject(error);
+        }
+      });
+  });
+};
+// https://attendanceapp.digiprima.co/api/hr/salary/pay
+export const hrPaySalary = async (token, data) => {
+  return new Promise((resolve, reject) => {
+    const config = {
+      method: 'POST',
+      url: `${API_URL}/api/hr/salary/pay`,
+
+      headers: {
+        'Content-Type': 'Application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      data: data,
+    };
+    console.log("configconfig",config);
+    
     axios
       .request(config)
       .then(response => {

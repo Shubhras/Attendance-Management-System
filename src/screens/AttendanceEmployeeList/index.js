@@ -157,6 +157,8 @@ const AttendanceEmployeeList = ({ navigation, route }) => {
       mobileNumber={item?.mobile}
       employeeId={item?.employee_code}
       image={item?.photo}
+      slots={item?.slots}
+      isSlots={true}
       onPress={() => {
         const itemCaptureFingerPrint =
           item?.fingerprint_template_data?.captureTemplet;
@@ -254,6 +256,7 @@ const AttendanceEmployeeList = ({ navigation, route }) => {
         sheetRef={bottomSheetRef}
         captureFingerPrint={captureFingerPrint}
         userId={id}
+        machineID={machineItem?.id}
         HandType={selectHand}
         FingerType={selectFinger}
         token={token}

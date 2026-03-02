@@ -3,6 +3,15 @@ import { Pressable, View } from 'react-native';
 import { Colors, LightThemeColors } from '../../../config/Colors';
 import { CustomText } from '../../global/CustomComponents';
 import styles from './styles';
+import { FONT_SIZE_XXS } from '../../../config/Constants';
+const getSlots = slots => {
+  const resultString = Object.entries(slots)
+    .filter(([_, value]) => value)
+    .map(([key]) => key.replace('slot', 'S'))
+    .join(',');
+  return resultString;
+};
+
 const MyEmployeeCard = ({
   onPress,
   name,
@@ -10,6 +19,10 @@ const MyEmployeeCard = ({
   mobileNumber,
   image,
   status,
+  slots,
+  isSlots = false,
+  isSalaryPaid = false,
+  salaryPaid = false,
 }) => {
   const getStatus = statusValue => {
     // Convert to number for comparison
@@ -59,6 +72,16 @@ const MyEmployeeCard = ({
         >
           {mobileNumber}
         </CustomText>
+        {isSlots && (
+          <CustomText
+            style={[
+              styles.subtitle,
+              { color: LightThemeColors.textLowContrast },
+            ]}
+          >
+            Slots: {getSlots(slots)}
+          </CustomText>
+        )}
       </View>
       {showStatus && (
         <View
@@ -66,6 +89,19 @@ const MyEmployeeCard = ({
         >
           <CustomText style={[styles.iconText, { color: Colors.white }]}>
             {statusInfo.icon}
+          </CustomText>
+        </View>
+      )}
+
+      {isSalaryPaid && salaryPaid && (
+        <View style={[styles.statusView, { backgroundColor: '#4CAF50' }]}>
+          <CustomText
+            style={[
+              styles.iconText,
+              { color: Colors.white, fontSize: FONT_SIZE_XXS },
+            ]}
+          >
+            Paid
           </CustomText>
         </View>
       )}
