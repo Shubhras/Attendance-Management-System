@@ -9,7 +9,7 @@ class Attendance extends Model
         'employee_id','machine_id','date','slot1',
     'slot2',
     'slot3','shift_type','clock_in','clock_out','status',
-        'fingerprint_template','scan_response','marked_by'
+        'fingerprint_template','scan_response','marked_by','scan_time'
     ];
 
     protected $casts = [

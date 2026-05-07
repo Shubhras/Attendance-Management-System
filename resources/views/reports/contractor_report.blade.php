@@ -249,6 +249,8 @@
 <body>
 
     <div class="header-title">Contractor Report</div>
+    <div class="header-title">Date Range: {{ $startDate }} to {{ $endDate }}</div>
+    <br>
     <div class="generated-at">Generated At: {{ $generated_at }}</div>
 
     <!-- Contractor Details -->
@@ -276,6 +278,15 @@
                 <td>Total Employees</td>
                 <td>{{ $contractor->employees->count() }}</td>
             </tr>
+            <tr>
+            <td>Total Male</td>
+            <td>{{ $totalMale }}</td>
+        </tr>
+
+        <tr>
+            <td>Total Female</td>
+            <td>{{ $totalFemale }}</td>
+        </tr>
         </table>
     </div>
 
@@ -291,7 +302,9 @@
                     <th>Emp Code</th>
                     <th>Name</th>
                     <th>Employee Type</th>
-                    <th>Total Days</th>
+                    <th>Gender</th>
+                    <th>Attendance</th>
+                    <th>Salary Type</th>
                     <th>Present</th>
                     <th>Leave</th>
                     <th>Half Day</th>
@@ -301,25 +314,58 @@
                     <th>Total Salary</th>
                 </tr>
             </thead>
+<tbody>
+    @foreach ($summary as $i => $row)
 
-            <tbody>
-                @foreach ($summary as $i => $row)
-                <tr>
-                    <td>{{ $i+1 }}</td>
-                    <td>{{ $row['employee']->employee_code }}</td>
-                    <td>{{ $row['employee']->name }}</td>
-                    <td>{{ $row['employee']->employee_type ?? '--' }}</td>
-                    <td>{{ $row['month_days'] }}</td>
-                    <td>{{ $row['present'] }}</td>
-                    <td>{{ $row['leave'] }}</td>
-                    <td>{{ $row['half_day'] }}</td>
-                    <td>{{ number_format($row['per_day_pay'],2) }}</td>
-                    <td>{{ number_format($row['salary_present'],2) }}</td>
-                    <td>{{ number_format($row['salary_half'],2) }}</td>
-                    <td>{{ number_format($row['total_salary'],2) }}</td>
-                </tr>
-                @endforeach
-            </tbody>
+    @php
+
+        $attendanceStatus = 'Absent';
+
+        if($row['present'] > 0){
+            $attendanceStatus = 'Present';
+        }
+        elseif($row['half_day'] > 0){
+            $attendanceStatus = 'Half Day';
+        }
+        elseif($row['leave'] > 0){
+            $attendanceStatus = 'Leave';
+        }
+
+    @endphp
+
+    <tr>
+        <td>{{ $i + 1 }}</td>
+
+        <td>{{ $row['employee']->employee_code }}</td>
+
+        <td>{{ $row['employee']->name }}</td>
+
+        <td>{{ $row['employee']->employee_type ?? '--' }}</td>
+
+        <td>{{ ucfirst($row['employee']->gender ?? '--') }}</td>
+
+        <!-- Attendance Status -->
+        <td>{{ $attendanceStatus }}</td>
+        <td>{{ $row['employee']->salary_type ?? '--' }}</td>
+        <!-- Counts -->
+        <td>{{ $row['present'] }}</td>
+
+        <td>{{ $row['leave'] }}</td>
+
+        <td>{{ $row['half_day'] }}</td>
+
+        <!-- Salary -->
+        <td>{{ number_format($row['per_day_pay'], 2) }}</td>
+
+        <td>{{ number_format($row['salary_present'], 2) }}</td>
+
+        <td>{{ number_format($row['salary_half'], 2) }}</td>
+
+        <td>{{ number_format($row['total_salary'], 2) }}</td>
+    </tr>
+
+    @endforeach
+</tbody>
         </table>
         @else
         <div class="no-data">No attendance data found.</div>

@@ -51,7 +51,12 @@ $subTitle = 'Manage Attendance';
             </form> -->
             <form method="GET" action="{{ route('attendance.index') }}"
                 class="d-flex align-items-center gap-3 flex-wrap" style="width:100%;">
-
+                <select name="per_page" class="form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px"
+                    onchange="this.form.submit()">
+                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                </select>
                 <!-- Date -->
                 <input type="date" name="date" value="{{ request('date', \Carbon\Carbon::today()->format('Y-m-d')) }}"
                     class="form-control h-40-px" style="max-width: 180px;" />
@@ -76,18 +81,44 @@ $subTitle = 'Manage Attendance';
 <button type="submit" class="btn btn-primary btn-sm px-16 py-12 radius-8">
     Apply
 </button>
-
+    <a href="{{ route('attendance.index') }}" class="btn btn-secondary">
+                                Reset
+                            </a>
 
             </form>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('attendance.exportAll', [
+            <!-- <a href="{{ route('attendance.exportAll', [
     'date' => request('date'),
     'range' => request('range')
 ]) }}" class="btn btn-outline-primary btn-sm px-12 py-12 radius-8">
                 <iconify-icon icon="mdi:download"></iconify-icon> Download PDF
-            </a>
+            </a> -->
+ <!-- Machine Wise PDF -->
+    <a href="{{ route('attendance.export.machine', [
+        'date'   => request('date'),
+        'range'  => request('range'),
+        'search' => request('search')
+    ]) }}"
+    class="btn btn-primary btn-sm px-14 py-12 radius-8">
 
+        <iconify-icon icon="mdi:file-pdf-box"></iconify-icon>
+        Machine Wise PDF
+
+    </a>
+
+    <!-- Attendance Details PDF -->
+    <a href="{{ route('attendance.export.employee', [
+        'date'   => request('date'),
+        'range'  => request('range'),
+        'search' => request('search')
+    ]) }}"
+    class="btn btn-primary btn-sm px-14 py-12 radius-8">
+
+        <iconify-icon icon="mdi:account-details"></iconify-icon>
+        Attendance Details PDF
+
+    </a>
         </div>
     </div>
 
@@ -197,13 +228,42 @@ $subTitle = 'Manage Attendance';
                 </table>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+            <!-- <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
                 <span>Showing {{ $employees->firstItem() ?? 0 }} to {{ $employees->lastItem() ?? 0 }} of
                     {{ $employees->total() }} entries</span>
                 <div>
                     <button type="submit" class="btn btn-primary text-sm btn-sm px-12 py-12 radius-8">Save All</button>
                 </div>
-            </div>
+            </div> -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24">
+
+    <!-- Left Side -->
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+
+        <span>
+            Showing {{ $employees->firstItem() ?? 0 }}
+            to {{ $employees->lastItem() ?? 0 }}
+            of {{ $employees->total() }} entries
+        </span>
+    </div>
+
+    <!-- Right Side -->
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+
+        <!-- Pagination -->
+        <div>
+            {{ $employees->appends(request()->query())->links() }}
+        </div>
+    </div>
+
+</div>
+        <!-- Save Button -->
+        <div>
+            <button type="submit"
+                class="btn btn-primary text-sm btn-sm px-12 py-12 radius-8">
+                Save All
+            </button>
+        </div>
         </form>
     </div>
 </div>

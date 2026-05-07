@@ -27,6 +27,13 @@ $subTitle = 'Machine-wise Employee & Salary Summary';
                 </button>
             </div>
         </form>
+        <form method="GET" action="{{ route('dashboard.machine-consumption.export') }}" class="d-flex gap-2">
+    <input type="date" name="from_date" class="form-control" required>
+    <input type="date" name="to_date" class="form-control" required>
+    <button type="submit" class="btn btn-success">
+        Export Excel
+    </button>
+</form>
     </div>
 
     <!-- Table -->
@@ -39,6 +46,7 @@ $subTitle = 'Machine-wise Employee & Salary Summary';
                         <th>Machine Name</th>
                         <th>Machine Photo</th>
                         <th>Total Employees</th>
+                        <th>Total Daily Cost</th>
                         <th>Total Monthly Cost</th>
                         <th>Avg Salary / Employee</th>
                     </tr>
@@ -61,6 +69,9 @@ $subTitle = 'Machine-wise Employee & Salary Summary';
                         </td>
                         <td class="text-center">
                             <span class="badge bg-primary fs-14 px-3 py-2">{{ $stat->total_employees }}</span>
+                        </td>
+                        <td style="color:red;">
+                            ₹{{ number_format($stat->total_daily_salary, 2) }}
                         </td>
                         <td class="text-success">
                             ₹{{ number_format($stat->total_monthly_salary, 2) }}

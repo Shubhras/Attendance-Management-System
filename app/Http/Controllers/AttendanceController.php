@@ -147,8 +147,460 @@ $query = Employee::with(['shift', 'machine'])
     $machine = Machine::orderBy('name')->get();
     // group by employee — returns collection per employee
     $attendanceMap = $attendances->groupBy('employee_id');
+    /*
+    |--------------------------------------------------------------------------
+    | Machine Summary
+    |--------------------------------------------------------------------------
+    */
 
-    return view('attendance.index', compact('employees', 'attendanceMap', 'date','machine'));
+    $machineSummary = Machine::with('employees')
+        ->get()
+        ->map(function ($machine) use ($date) {
+
+            $employeeIds = $machine->employees->pluck('id');
+
+            // Attendance count
+            $attendanceCount = Attendance::whereDate('date', $date)
+                ->whereIn('employee_id', $employeeIds)
+                ->distinct('employee_id')
+                ->count('employee_id');
+
+            return [
+                'machine_name'      => $machine->name,
+                'total_employee'    => $machine->employees->count(),
+
+                'present_count'     => $attendanceCount,
+
+                'male_count'        => $machine->employees
+                                            ->where('gender', 'male')
+                                            ->count(),
+
+                'female_count'      => $machine->employees
+                                            ->where('gender', 'female')
+                                            ->count(),
+
+                'company_employee'  => $machine->employees
+                                            ->where('employee_type', 'company')
+                                            ->count(),
+
+                'contractor_employee' => $machine->employees
+                                            ->where('employee_type', 'contractor')
+                                            ->count(),
+            ];
+        });
+    return view('attendance.index', compact('employees', 'attendanceMap', 'date','machine','machineSummary'));
+}
+public function exportwithempAttendance1(Request $request)
+{
+    $date = $request->date ?? Carbon::today()->format('Y-m-d');
+
+    $attendance = Attendance::with([
+            'employee.contractor',
+            'machine'
+        ])
+        ->whereDate('date', $date)
+        ->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Machine Summary
+    |--------------------------------------------------------------------------
+    */
+
+    $machineSummary = Machine::with(['employees.contractor'])
+        ->get()
+        ->map(function ($machine) use ($date) {
+
+            $employeeIds = $machine->employees->pluck('id');
+
+            $attendanceCount = Attendance::whereDate('date', $date)
+                ->whereIn('employee_id', $employeeIds)
+                ->distinct('employee_id')
+                ->count('employee_id');
+
+            return [
+                'machine_name'        => $machine->name,
+
+                'total_employee'      => $machine->employees->count(),
+
+                'attendance_count'    => $attendanceCount,
+
+                'male_count'          => $machine->employees
+                                                ->where('gender', 'male')
+                                                ->count(),
+
+                'female_count'        => $machine->employees
+                                                ->where('gender', 'female')
+                                                ->count(),
+
+                'company_employee'    => $machine->employees
+                                                ->where('employee_type', 'company')
+                                                ->count(),
+
+                'contractor_employee' => $machine->employees
+                                                ->where('employee_type', 'contractor')
+                                                ->count(),
+
+                // Contractor Names
+                'contractors'         => $machine->employees
+                                                ->where('employee_type', 'contractor')
+                                                ->pluck('contractor.name')
+                                                ->filter()
+                                                ->unique()
+                                                ->implode(', '),
+
+                // Employee Names
+                'employee_names'      => $machine->employees
+                                                ->pluck('name')
+                                                ->implode(', '),
+            ];
+        });
+
+    $pdf = PDF::loadView('attendance.pdf', [
+        'attendance'      => $attendance,
+        'machineSummary'  => $machineSummary,
+        'date'            => $date,
+        'generatedAt'     => now()->format('d-m-Y h:i A')
+    ]);
+
+    return $pdf->download('attendance-report.pdf');
+}
+public function exportwithempAttendance(Request $request)
+{
+    $date  = $request->date ?? Carbon::today()->format('Y-m-d');
+    $range = $request->range ?? 'daily';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attendance Query
+    |--------------------------------------------------------------------------
+    */
+
+    $attendanceQuery = Attendance::with([
+        'employee.contractor',
+        'machine'
+    ]);
+
+    switch ($range) {
+
+        case 'monthly':
+
+            $attendanceQuery->whereMonth('date', Carbon::parse($date)->month)
+                            ->whereYear('date', Carbon::parse($date)->year);
+
+            break;
+
+        case '3months':
+
+            $attendanceQuery->whereBetween('date', [
+                Carbon::parse($date)->subMonths(3),
+                Carbon::parse($date)
+            ]);
+
+            break;
+
+        case '6months':
+
+            $attendanceQuery->whereBetween('date', [
+                Carbon::parse($date)->subMonths(6),
+                Carbon::parse($date)
+            ]);
+
+            break;
+
+        case 'daily':
+        default:
+
+            $attendanceQuery->whereDate('date', $date);
+
+            break;
+    }
+
+    $attendance = $attendanceQuery->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Employee Summary
+    |--------------------------------------------------------------------------
+    */
+
+    $employeeIds = $attendance->pluck('employee_id')->unique();
+
+    $employees = Employee::with('contractor')
+        ->whereIn('id', $employeeIds)
+        ->get();
+
+    $totalEmployee = $employees->count();
+
+    $totalAttendance = $attendance
+                            ->whereIn('status', [1,2])
+                            ->count();
+
+    $maleCount = $employees
+                    ->where('gender', 'male')
+                    ->count();
+
+    $femaleCount = $employees
+                    ->where('gender', 'female')
+                    ->count();
+
+    $companyEmployee = $employees
+                            ->where('employee_type', 'company')
+                            ->count();
+
+    $contractorEmployee = $employees
+                            ->where('employee_type', 'contractor')
+                            ->count();
+
+    $contractorNames = $employees
+                            ->pluck('contractor.name')
+                            ->filter()
+                            ->unique()
+                            ->implode(', ');
+
+    /*
+    |--------------------------------------------------------------------------
+    | PDF
+    |--------------------------------------------------------------------------
+    */
+
+    $pdf = PDF::loadView('attendance.full-report-pdf', [
+
+        'attendance'          => $attendance,
+
+        'date'                => $date,
+
+        'range'               => $range,
+
+        'generatedAt'         => now()->format('d-m-Y h:i A'),
+
+        'totalEmployee'       => $totalEmployee,
+
+        'totalAttendance'     => $totalAttendance,
+
+        'maleCount'           => $maleCount,
+
+        'femaleCount'         => $femaleCount,
+
+        'companyEmployee'     => $companyEmployee,
+
+        'contractorEmployee'  => $contractorEmployee,
+
+        'contractorNames'     => $contractorNames,
+    ]);
+
+    return $pdf->download('attendance-report.pdf');
+}
+public function exportMachineSummary(Request $request)
+{
+    $date  = $request->date ?? Carbon::today()->format('Y-m-d');
+    $range = $request->range ?? 'daily';
+
+    $machineSummary = Machine::with([
+        'employees.contractor'
+    ])->get()->map(function ($machine) use ($date, $range) {
+
+        $employeeIds = $machine->employees->pluck('id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attendance Query
+        |--------------------------------------------------------------------------
+        */
+
+        $attendanceQuery = Attendance::whereIn('employee_id', $employeeIds);
+
+        switch ($range) {
+
+            case 'monthly':
+
+                $attendanceQuery->whereMonth(
+                    'date',
+                    Carbon::parse($date)->month
+                )->whereYear(
+                    'date',
+                    Carbon::parse($date)->year
+                );
+
+                break;
+
+            case '3months':
+
+                $attendanceQuery->whereBetween('date', [
+                    Carbon::parse($date)->subMonths(3),
+                    Carbon::parse($date)
+                ]);
+
+                break;
+
+            case '6months':
+
+                $attendanceQuery->whereBetween('date', [
+                    Carbon::parse($date)->subMonths(6),
+                    Carbon::parse($date)
+                ]);
+
+                break;
+
+            default:
+
+                $attendanceQuery->whereDate('date', $date);
+
+                break;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attendance Count
+        |--------------------------------------------------------------------------
+        */
+
+        $attendanceCount = $attendanceQuery
+            ->distinct('employee_id')
+            ->count('employee_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Contractor Details With Employee Names
+        |--------------------------------------------------------------------------
+        */
+
+        $contractorDetails = $machine->employees
+            ->where('employee_type', 'contractor')
+            ->groupBy(function ($emp) {
+
+                return optional($emp->contractor)->name ?? 'Unknown';
+
+            })
+            ->map(function ($emps, $contractorName) {
+
+                $employeeNames = $emps->pluck('name')->implode(', ');
+
+                return $contractorName
+                    . ' (' . $emps->count() . ')'
+                    . ' : '
+                    . $employeeNames;
+
+            })
+            ->implode(' | ');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Company Employee Details
+        |--------------------------------------------------------------------------
+        */
+
+        $companyEmployeeDetails = $machine->employees
+            ->where('employee_type', 'company')
+            ->pluck('name')
+            ->implode(', ');
+
+        return [
+
+            'machine_name' => $machine->name,
+
+            'total_employee' => $machine->employees->count(),
+
+            'attendance_count' => $attendanceCount,
+
+            'male_count' => $machine->employees
+                ->where('gender', 'male')
+                ->count(),
+
+            'female_count' => $machine->employees
+                ->where('gender', 'female')
+                ->count(),
+
+            'company_employee' => $machine->employees
+                ->where('employee_type', 'company')
+                ->count(),
+
+            'contractor_employee' => $machine->employees
+                ->where('employee_type', 'contractor')
+                ->count(),
+
+            'company_employee_names' => $companyEmployeeDetails ?: '-',
+
+            'contractor_details' => $contractorDetails ?: '-',
+        ];
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate PDF
+    |--------------------------------------------------------------------------
+    */
+
+    $pdf = PDF::loadView('attendance.machine-summary-pdf', [
+
+        'machineSummary' => $machineSummary,
+
+        'date' => $date,
+
+        'range' => ucfirst($range),
+
+        'generatedAt' => now()->format('d-m-Y h:i A'),
+
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->download('machine-summary-report.pdf');
+}
+public function exportEmployeeDetails(Request $request)
+{
+    $date  = $request->date ?? Carbon::today()->format('Y-m-d');
+    $range = $request->range ?? 'daily';
+
+    $attendanceQuery = Attendance::with([
+        'employee.contractor',
+        'machine'
+    ]);
+
+    switch ($range) {
+
+        case 'monthly':
+
+            $attendanceQuery->whereMonth('date', Carbon::parse($date)->month)
+                            ->whereYear('date', Carbon::parse($date)->year);
+
+            break;
+
+        case '3months':
+
+            $attendanceQuery->whereBetween('date', [
+                Carbon::parse($date)->subMonths(3),
+                Carbon::parse($date)
+            ]);
+
+            break;
+
+        case '6months':
+
+            $attendanceQuery->whereBetween('date', [
+                Carbon::parse($date)->subMonths(6),
+                Carbon::parse($date)
+            ]);
+
+            break;
+
+        default:
+
+            $attendanceQuery->whereDate('date', $date);
+
+            break;
+    }
+
+    $attendance = $attendanceQuery->get();
+
+    $pdf = PDF::loadView('attendance.employee-details-pdf', [
+
+        'attendance' => $attendance,
+        'date' => $date,
+        'range' => $range,
+        'generatedAt' => now()->format('d-m-Y h:i A'),
+
+    ]);
+
+    return $pdf->download('employee-attendance-report.pdf');
 }
 
 // public function singleMarkForm(Request $request)
@@ -217,13 +669,61 @@ public function singleMarkForm(Request $request)
 //     return redirect()->route('attendance.index')
 //         ->with('success', 'Attendance marked successfully!');
 // }
+
+// 7 may with slots and machine
+// public function storeSingle(Request $request)
+// {
+//     $request->validate([
+//         'employee_id' => 'required|exists:employees,id',
+//         'status'      => 'required|in:0,1,2',
+//         'clock_in'    => 'nullable',
+//         'clock_out'   => 'nullable',
+//         'date'        => 'required|date',
+//     ]);
+
+//     $status = (int) $request->status;
+//     $selectedDate = $request->date;
+//     $now = now();
+
+//     $employee = Employee::findOrFail($request->employee_id);
+
+//     // Auto-detect slot values (like update)
+//     $slot1 = $now;
+//     $slot2 = $slot1; // default same as slot1
+//     $slot3 = $slot2; // default same as slot2
+
+//     // Auto-set machine from employee
+//     $machineId = $employee->machine_id ?? null;
+//     // Save attendance
+//     Attendance::updateOrCreate(
+//         [
+//             'employee_id' => $employee->id,
+//             'date'        => $selectedDate,
+//         ],
+//         [
+//             'status'     => $status,
+//             'scan_status'=> $status,
+//             'slot1'      => $slot1,
+//             'slot2'      => $slot2,
+//             'slot3'      => $slot3,
+//             'machine_id' => $machineId,
+//             'marked_by'  => auth()->id(),
+//         ]
+//     );
+
+//     // Update employee attendance_status
+//     $employee->update(['attendance_status' => $status]);
+
+//     return redirect()
+//         ->route('attendance.index')
+//         ->with('success', 'Attendance marked successfully!');
+// }
+
 public function storeSingle(Request $request)
 {
     $request->validate([
         'employee_id' => 'required|exists:employees,id',
         'status'      => 'required|in:0,1,2',
-        'clock_in'    => 'nullable',
-        'clock_out'   => 'nullable',
         'date'        => 'required|date',
     ]);
 
@@ -233,39 +733,55 @@ public function storeSingle(Request $request)
 
     $employee = Employee::findOrFail($request->employee_id);
 
-    // Auto-detect slot values (like update)
-    $slot1 = $now;
-    $slot2 = $slot1; // default same as slot1
-    $slot3 = $slot2; // default same as slot2
+    // Find existing attendance
+    $attendance = Attendance::firstOrNew([
+        'employee_id' => $employee->id,
+        'date'        => $selectedDate,
+    ]);
 
-    // Auto-set machine from employee
+    // Machine ID
     $machineId = $employee->machine_id ?? null;
-    // Save attendance
-    Attendance::updateOrCreate(
-        [
-            'employee_id' => $employee->id,
-            'date'        => $selectedDate,
-        ],
-        [
-            'status'     => $status,
-            'scan_status'=> $status,
-            'slot1'      => $slot1,
-            'slot2'      => $slot2,
-            'slot3'      => $slot3,
-            'machine_id' => $machineId,
-            'marked_by'  => auth()->id(),
-        ]
-    );
 
-    // Update employee attendance_status
-    $employee->update(['attendance_status' => $status]);
+    // Default values
+    $clockIn  = null;
+    $clockOut = null;
+
+    // Present
+    if ($status == 1) {
+
+        $clockIn  = $now->format('H:i:s');
+        $clockOut = $now->copy()->addHours(8)->format('H:i:s');
+
+    }
+    // Half Day
+    elseif ($status == 2) {
+
+        $clockIn  = $now->format('H:i:s');
+        $clockOut = $now->copy()->addHours(4)->format('H:i:s');
+    }
+
+    // Update attendance
+    $attendance->status       = $status;
+    $attendance->scan_status  = 0;
+    $attendance->slot1        = $now;
+    $attendance->slot2        = $now;
+    $attendance->slot3        = $now;
+    $attendance->clock_in     = $clockIn;
+    $attendance->clock_out    = $clockOut;
+    $attendance->machine_id   = $machineId;
+    $attendance->marked_by    = auth()->id();
+
+    $attendance->save();
+
+    // Update employee status
+    $employee->update([
+        'attendance_status' => $status
+    ]);
 
     return redirect()
         ->route('attendance.index')
         ->with('success', 'Attendance marked successfully!');
 }
-
-
 
     /* ----------------------------
        MASS ATTENDANCE SAVE
@@ -595,52 +1111,100 @@ public function store(Request $request)
 //         ->route('attendance.index')
 //         ->with('success', 'Attendance updated!');
 // }
+
+// 7 may with slots and machine 
+// public function update(Request $request, $id)
+// {
+//     $attendance = Attendance::findOrFail($id);
+
+//     $request->validate([
+//         'status' => 'required|in:0,1,2',
+//         'clock_in' => 'nullable',
+//         'clock_out' => 'nullable',
+//         'machine_id' => 'nullable|exists:machines,id',
+//     ]);
+
+//     $status = (int)$request->status;
+//     $now = now();
+
+//     // Auto-detect slot values
+//     $slot1 = $attendance->slot1 ?? $now;
+//     $slot2 = $attendance->slot2 ?? ($attendance->slot1 ? $now : null);
+//     $slot3 = $attendance->slot3 ?? ($attendance->slot2 ? $now : null);
+
+//     // Machine ID from request or fallback to employee relation
+//     $machineId = $request->machine_id ?? $attendance->employee->machine_id ?? null;
+
+//     // Optionally, combine clock_in/out with date
+//     $clockIn = $request->clock_in ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_in : $attendance->clock_in;
+//     $clockOut = $request->clock_out ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_out : $attendance->clock_out;
+
+//     $attendance->update([
+//         'status'      => $status,
+//         'scan_status' => $status,
+//         'slot1'       => $slot1,
+//         'slot2'       => $slot2,
+//         'slot3'       => $slot3,
+//         'machine_id'  => $machineId,
+//         'clock_in'    => $clockIn,
+//         'clock_out'   => $clockOut,
+//         'marked_by'   => auth()->id(),
+//     ]);
+
+//     Employee::where('id', $attendance->employee_id)
+//         ->update(['attendance_status' => $status]);
+
+//     return redirect()
+//         ->route('attendance.index')
+//         ->with('success', 'Attendance updated!');
+// }
 public function update(Request $request, $id)
 {
     $attendance = Attendance::findOrFail($id);
 
     $request->validate([
-        'status' => 'required|in:0,1,2',
-        'clock_in' => 'nullable',
-        'clock_out' => 'nullable',
+        'status'     => 'required|in:0,1,2',
         'machine_id' => 'nullable|exists:machines,id',
     ]);
 
-    $status = (int)$request->status;
+    $status = (int) $request->status;
     $now = now();
 
-    // Auto-detect slot values
-    $slot1 = $attendance->slot1 ?? $now;
-    $slot2 = $attendance->slot2 ?? ($attendance->slot1 ? $now : null);
-    $slot3 = $attendance->slot3 ?? ($attendance->slot2 ? $now : null);
+    // Machine ID
+    $machineId = $request->machine_id
+        ?? $attendance->employee->machine_id
+        ?? null;
 
-    // Machine ID from request or fallback to employee relation
-    $machineId = $request->machine_id ?? $attendance->employee->machine_id ?? null;
-
-    // Optionally, combine clock_in/out with date
-    $clockIn = $request->clock_in ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_in : $attendance->clock_in;
-    $clockOut = $request->clock_out ? $attendance->date->format('Y-m-d') . ' ' . $request->clock_out : $attendance->clock_out;
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Manual Attendance
+    |--------------------------------------------------------------------------
+    | Admin has full access:
+    | - No shift restriction
+    | - No time restriction
+    | - No clock-in/out required
+    | - Directly mark Present / Leave / Half Day
+    |--------------------------------------------------------------------------
+    */
 
     $attendance->update([
-        'status'      => $status,
-        'scan_status' => $status,
-        'slot1'       => $slot1,
-        'slot2'       => $slot2,
-        'slot3'       => $slot3,
+        'status'      => $status, // 1=Present,0=Leave,2=Half Day
+        'scan_status' => 0, // Manual admin entry
         'machine_id'  => $machineId,
-        'clock_in'    => $clockIn,
-        'clock_out'   => $clockOut,
         'marked_by'   => auth()->id(),
+        'updated_at'  => $now,
     ]);
 
+    // Update employee current attendance status
     Employee::where('id', $attendance->employee_id)
-        ->update(['attendance_status' => $status]);
+        ->update([
+            'attendance_status' => $status
+        ]);
 
     return redirect()
         ->route('attendance.index')
-        ->with('success', 'Attendance updated!');
+        ->with('success', 'Attendance updated successfully!');
 }
-
 
     /* ----------------------------
        EXPORT PDF (ALL EMPLOYEES)
@@ -831,7 +1395,86 @@ public function exportAll(Request $request)
 //     ));
 // }
 
+//3apr without status active code
+// public function summary(Request $request)
+// {
+//     $month = $request->get('month', Carbon::now()->format('Y-m'));
+//     $employeeId = $request->get('employee_id');
+//     $searchCode = $request->get('search_code');
 
+//     $start = Carbon::parse($month . '-01')->startOfMonth();
+//     $end   = Carbon::parse($month . '-01')->endOfMonth();
+//     $daysInMonth = $start->daysInMonth;
+
+//     // Employees
+//     $empQuery = Employee::orderBy('name');
+
+//     if ($employeeId) {
+//         $empQuery->where('id', $employeeId);
+//     }
+
+//     if ($searchCode) {
+//         $empQuery->where('employee_code', 'like', '%' . $searchCode . '%');
+//     }
+
+//     $employees = $empQuery->get();
+
+//     // Attendance
+//     $attQuery = Attendance::whereBetween('date', [$start, $end]);
+//     if ($employeeId) {
+//         $attQuery->where('employee_id', $employeeId);
+//     }
+//     $attendances = $attQuery->get();
+
+//     // Slot Hour Definition
+//     $slotHours = [
+//         'morning' => [
+//             'slot1' => 2,
+//             'slot2' => 2,
+//             'slot3' => 2,
+//         ],
+//         'night' => [
+//             'slot1' => 2,
+//             'slot2' => 4,
+//             'slot3' => 6,
+//         ],
+//     ];
+
+//     $attendanceMap = [];
+
+//     foreach ($attendances as $a) {
+//         $day = Carbon::parse($a->date)->day;
+//         $totalHours = 0;
+
+//         $shift = $a->shift_type ?? 'morning';
+
+//         if (!empty($slotHours[$shift])) {
+//             foreach (['slot1', 'slot2', 'slot3'] as $slot) {
+//                 if (!is_null($a->$slot)) {
+//                     $totalHours += $slotHours[$shift][$slot];
+//                 }
+//             }
+//         }
+
+//         // Format hours → "06h 00min"
+//         $hoursFormatted = $totalHours > 0
+//             ? sprintf('%02dh 00min', $totalHours)
+//             : null;
+
+//         $attendanceMap[$a->employee_id][$day] = [
+//             'status' => (int) $a->status,
+//             'hours'  => $hoursFormatted,
+//         ];
+//     }
+
+//     return view('attendance.summary', compact(
+//         'employees',
+//         'month',
+//         'daysInMonth',
+//         'attendanceMap'
+//     ));
+// }
+//end
 public function summary(Request $request)
 {
     $month = $request->get('month', Carbon::now()->format('Y-m'));
@@ -843,7 +1486,7 @@ public function summary(Request $request)
     $daysInMonth = $start->daysInMonth;
 
     // Employees
-    $empQuery = Employee::orderBy('name');
+    $empQuery = Employee::where('is_active', true)->orderBy('name');
 
     if ($employeeId) {
         $empQuery->where('id', $employeeId);

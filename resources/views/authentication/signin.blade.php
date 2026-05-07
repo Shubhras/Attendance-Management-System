@@ -145,7 +145,26 @@
     @endphp
 
     <x-script />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggles = document.querySelectorAll(".toggle-password");
 
+    toggles.forEach(toggle => {
+        toggle.addEventListener("click", function () {
+            this.classList.toggle("ri-eye-off-line");
+
+            let input = document.querySelector(this.getAttribute("data-toggle"));
+
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        });
+    });
+});
+</script>
 </body>
 
 </html>

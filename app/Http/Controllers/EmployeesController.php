@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Contractor;
-use App\Models\{Machine,Shift,Attendance};
+use App\Models\Machine;
+use App\Models\Shift;
+use App\Models\Attendance;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use DB;
 
     class EmployeesController extends Controller
     {
@@ -34,12 +37,16 @@ use Carbon\Carbon;
             //           ->orWhere('govid', 'like', "%{$search}%");
             //     });
             // }
-            if ($search = $request->search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
+if ($request->filled('search')) {
+    $search = $request->search;
+
+    $query->where(function ($q) use ($search) {
+        $q->where('name', 'like', "%{$search}%")
+          ->orWhere('mobile', 'like', "%{$search}%")
+          ->orWhere('employee_code', 'like', "%{$search}%")
+          ->orWhere('govid', 'like', "%{$search}%");
+    });
+}
             $employees = $query->latest()->paginate($request->get('per_page', 10));
             $contractors = Contractor::orderBy('name')->get();
             $machine = Machine::orderBy('name')->get();
@@ -51,7 +58,7 @@ use Carbon\Carbon;
         public function create()
         {
             $contractors = Contractor::orderBy('name')->get();
-            $shifts = Shift::orderBy('shift_name')->get();
+             $shifts = Shift::orderBy('shift_name')->get();
             return view('employees-get.create', compact('contractors','shifts'));
         }
 
@@ -96,7 +103,7 @@ use Carbon\Carbon;
 
         //     return redirect()->route('employees-get.index')->with('success', 'Employee created successfully!');
         // }
-    public function store(Request $request)
+             public function store(Request $request)
     {
         $validated = $request->validate([
             'name'              => 'required|string|max:255',
@@ -154,82 +161,189 @@ use Carbon\Carbon;
         }
 
         // ✅ Generate Employee Code
-        // if ($validated['employee_type'] === 'company') {
-        //     // Company employees use EMP-01 → EMP-999
-        //     $count = Employee::where('employee_type', 'company')->count() + 1;
-        //     $validated['employee_code'] = 'EMP-' . str_pad($count, 2, '0', STR_PAD_LEFT);
-        // } 
         if ($validated['employee_type'] === 'company') {
-            $lastEmp = Employee::where('employee_type', 'company')
-                ->where('employee_code', 'like', 'EMP-%')
-                ->orderBy('id', 'desc')
-                ->first();
+            $lastNumber = Employee::where('employee_type', 'company')
+    ->where('employee_code', 'like', 'EMP-%')
+    ->withTrashed() // include soft deleted
+    ->max(DB::raw("CAST(SUBSTRING(employee_code, 5) AS UNSIGNED)"));
 
-            if ($lastEmp) {
-                $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastEmp->employee_code);
-                $nextNumber = $lastNumber + 1;
-            } else {
-                $nextNumber = 1;
-            }
+$nextNumber = $lastNumber ? $lastNumber + 1 : 1;
 
-            $validated['employee_code'] = 'EMP-' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
+$validated['employee_code'] = 'EMP-' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
+            // $lastEmp = Employee::where('employee_type', 'company')
+            //     ->where('employee_code', 'like', 'EMP-%')
+            //     ->orderBy('id', 'desc')
+            //     ->first();
+
+            // if ($lastEmp) {
+            //     $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastEmp->employee_code);
+            //     $nextNumber = $lastNumber + 1;
+            // } else {
+            //     $nextNumber = 1;
+            // }
+
+            // $validated['employee_code'] = 'EMP-' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
         }
         else {
             // Contractor employees use CONT-XXXX based on contractor code range
             $contractor = Contractor::findOrFail($validated['contractor_id']);
-            $lastEmp = Employee::where('contractor_id', $contractor->id)
-                ->orderBy('id', 'desc')
-                ->first();
+            // $lastEmp = Employee::where('contractor_id', $contractor->id)
+            //     ->orderBy('id', 'desc')
+            //     ->first();
 
-            $nextNumber = $lastEmp
-                ? ((int)preg_replace('/[^0-9]/', '', $lastEmp->employee_code) + 1)
-                : $contractor->code_start;
+            // $nextNumber = $lastEmp
+            //     ? ((int)preg_replace('/[^0-9]/', '', $lastEmp->employee_code) + 1)
+            //     : $contractor->code_start;
 
-            if ($nextNumber > $contractor->code_end) {
-                return redirect()->back()->withErrors([
-                    'error' => 'This contractor’s employee code range is full.',
-                ]);
-            }
+            // if ($nextNumber > $contractor->code_end) {
+            //     return redirect()->back()->withErrors([
+            //         'error' => 'This contractor’s employee code range is full.',
+            //     ]);
+            // }
 
-            $validated['employee_code'] = 'CONT-' . $nextNumber;
+            // $validated['employee_code'] = 'CONT-' . $nextNumber;
+            $lastNumber = Employee::where('contractor_id', $contractor->id)
+    ->where('employee_code', 'like', 'CONT-%')
+    ->withTrashed() // include soft deleted if using soft deletes
+    ->selectRaw("MAX(CAST(SUBSTRING(employee_code, 6) AS UNSIGNED)) as max_number")
+    ->value('max_number');
+
+$nextNumber = $lastNumber 
+    ? $lastNumber + 1 
+    : $contractor->code_start;
+
+if ($nextNumber < $contractor->code_start) {
+    $nextNumber = $contractor->code_start;
+}
+
+if ($nextNumber > $contractor->code_end) {
+    return redirect()->back()->withErrors([
+        'error' => 'This contractor’s employee code range is full.',
+    ]);
+}
+
+$validated['employee_code'] = 'CONT-' . $nextNumber;
         }
-
-        // Employee::create($validated);
         $employee = Employee::create($validated);
-// create dummy fingerprint template & today's pending attendance
-// $dummy = [
-//     'device' => 'MFS110',
-//     'template_id' => (string) Str::uuid(),
-//     'notes' => 'enrolled by admin (dummy)'
-// ];
-
-// Attendance::create([
-//     'employee_id' => $employee->id,
-//     'date' => Carbon::now('Asia/Kolkata')->format('Y-m-d'),
-//     'status' => 'pending',
-//     'fingerprint_template' => $dummy,
-//     'marked_by' => auth()->id()
-// ]);
         return redirect()->route('employees-get.index')->with('success', 'Employee created successfully!');
     }
-// public function printCard($uuid)
-// {
-//     $employee = Employee::with(['contractor', 'machine'])
-//         ->where('uuid', $uuid)
-//         ->firstOrFail();
-//             $shifts = Shift::orderBy('shift_name')->get();
-//             $machine = Machine::all();
-//     $pdf = PDF::loadView('employees-get.id-card', compact('employee','machine'));
+//     public function store(Request $request)
+//     {
+//         $validated = $request->validate([
+//             'name'              => 'required|string|max:255',
+//             'mobile'            => 'required|string|max:15|unique:employees,mobile',
+//             'govid'             => 'nullable|string|max:255',
+//             'dob'               => 'nullable|date',
+//             'gender'            => ['nullable', Rule::in(['male', 'female', 'other'])],
+//             'photo'             => 'nullable|image|max:2048',
+//             'fingerprint'       => 'nullable|file|max:4096',
+//             'aadhar_card'       => 'nullable|file|max:4096',
+//             'contractor_id'     => 'nullable|exists:contractors,id',
+//             //'machine'           => 'nullable|string|max:255',
+//             'machine_id' => 'nullable|exists:machines,id',
+//             'shift_id' => 'nullable|exists:shifts,id',
+//             // 'salary_monthly'    => 'nullable|numeric|min:0',
+//             'salary_type'       => ['required', Rule::in(['monthly', 'daily'])],
+//             'salary_monthly'    => 'nullable|numeric|min:0',
+//             'salary_daily'      => 'nullable|numeric|min:0',
+//             'employee_type'     => ['required', Rule::in(['contractor', 'company'])],
+//             'company_department'=> 'nullable|string|max:255',
+//             'employee_work_title' => 'nullable|string|max:255',
+//             'joining_date' => 'nullable|date',
+//         ]);
 
-//     // 1 inch = 72 points
-//     $width = 4 * 72;     // 288
-//     $height = 2.7 * 72;  // 194
+//         $validated['uuid'] = Str::uuid();
+//         $validated['created_by'] = auth()->id();
+//         if ($validated['salary_type'] === 'monthly') {
+//             $validated['salary_daily'] = null;
+//         } else {
+//             $validated['salary_monthly'] = null;
+//         }
+//         // ✅ Handle Photo Upload
+//         if ($request->hasFile('photo')) {
+//             $photo = $request->file('photo');
+//             $photoName = uniqid() . '.' . $photo->getClientOriginalExtension();
+//             $photo->move(public_path('employees/photos'), $photoName);
+//             $validated['photo'] = 'employees/photos/' . $photoName;
+//         }
 
-//     // Correct dompdf required format:
-//     $pdf->setPaper([0, 0, $width, $height], 'portrait');
+//         // ✅ Handle Fingerprint Upload
+//         // if ($request->hasFile('fingerprint')) {
+//         //     $fingerprint = $request->file('fingerprint');
+//         //     $fingerprintName = uniqid() . '.' . $fingerprint->getClientOriginalExtension();
+//         //     $fingerprint->move(public_path('employees/fingerprints'), $fingerprintName);
+//         //     $validated['fingerprint'] = 'employees/fingerprints/' . $fingerprintName;
+//         // }
 
-//     return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
+//         // ✅ Handle Aadhaar Card Upload
+//         if ($request->hasFile('aadhar_card')) {
+//             $aadhar = $request->file('aadhar_card');
+//             $aadharName = uniqid() . '.' . $aadhar->getClientOriginalExtension();
+//             $aadhar->move(public_path('employees/aadhar_cards'), $aadharName);
+//             $validated['aadhar_card'] = 'employees/aadhar_cards/' . $aadharName;
+//         }
+
+//         // ✅ Generate Employee Code
+//         $validated['fingerprint'] = 'false';
+//         $validated['fingerprint_template_data'] = null;
+// if ($validated['employee_type'] === 'company') {
+//     $lastEmp = Employee::where('employee_type', 'company')
+//         ->where('employee_code', 'like', 'EMP-%')
+//         ->orderBy('id', 'desc')
+//         ->first();
+
+//     if ($lastEmp) {
+//         $lastNumber = (int) preg_replace('/[^0-9]/', '', $lastEmp->employee_code);
+//         $nextNumber = $lastNumber + 1;
+//     } else {
+//         $nextNumber = 1;
+//     }
+
+//     $validated['employee_code'] = 'EMP-' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
 // }
+//         // if ($validated['employee_type'] === 'company') {
+//         //     // Company employees use EMP-01 → EMP-999
+//         //     $count = Employee::where('employee_type', 'company')->count() + 1;
+//         //     $validated['employee_code'] = 'EMP-' . str_pad($count, 2, '0', STR_PAD_LEFT);
+//         // } else {
+//         //     // Contractor employees use CONT-XXXX based on contractor code range
+//         //     $contractor = Contractor::findOrFail($validated['contractor_id']);
+//         //     $lastEmp = Employee::where('contractor_id', $contractor->id)
+//         //         ->orderBy('id', 'desc')
+//         //         ->first();
+
+//         //     $nextNumber = $lastEmp
+//         //         ? ((int)preg_replace('/[^0-9]/', '', $lastEmp->employee_code) + 1)
+//         //         : $contractor->code_start;
+
+//         //     if ($nextNumber > $contractor->code_end) {
+//         //         return redirect()->back()->withErrors([
+//         //             'error' => 'This contractor’s employee code range is full.',
+//         //         ]);
+//         //     }
+
+//         //     $validated['employee_code'] = 'CONT-' . $nextNumber;
+//         // }
+
+//         //Employee::create($validated);
+//         $employee = Employee::create($validated);
+// // create dummy fingerprint template & today's pending attendance
+// // $dummy = [
+// //     'device' => 'MFS110',
+// //     'template_id' => (string) Str::uuid(),
+// //     'notes' => 'enrolled by admin (dummy)'
+// // ];
+
+// // Attendance::create([
+// //     'employee_id' => $employee->id,
+// //     'date' => Carbon::now('Asia/Kolkata')->format('Y-m-d'),
+// //     'status' => 'pending',
+// //     'fingerprint_template' => $dummy,
+// //     'marked_by' => auth()->id()
+// // ]);
+//         return redirect()->route('employees-get.index')->with('success', 'Employee created successfully!');
+//     }
+
 public function printCard($uuid)
 {
     $employee = Employee::with(['contractor', 'machine'])
@@ -241,32 +355,29 @@ public function printCard($uuid)
     // Create PDF
     $pdf = PDF::loadView('employees-get.id-card', compact('employee', 'machine'));
 
-    // SMALL CARD SIZE → 4 inch × 2.7 inch
-    // 1 inch = 72 points
-    $width = 4 * 72;     // 288
-    $height = 2.7 * 72;  // 194.4
-
-    $pdf->setPaper([0, 0, $width, $height], 'portrait');
+    $pdf->setPaper('A4', 'portrait');
 
     return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
 }
+public function printMultiple(Request $request)
+{
+    $ids = explode(',', $request->ids);
 
-// public function printCard($uuid)
-// {
-//     $employee = Employee::with(['contractor', 'machine'])
-//         ->where('uuid', $uuid)
-//         ->firstOrFail();
+    $employees = Employee::whereIn('id', $ids)
+        ->with(['contractor', 'machine'])
+        ->get();
 
-//     $machine = Machine::all();
+    $machine = Machine::all();
 
-//     $pdf = PDF::loadView('employees-get.id-card', compact('employee','machine'))
-//               ->setPaper('A4', 'portrait'); // A4 size
+    // ✅ group into 4 per page (4 employees = 8 cards total per page: Front & Back)
+    $chunks = $employees->values()->chunk(4);
+    
+    $pdf = PDF::loadView('employees-get.multi-id-card', compact('chunks', 'machine'));
 
-//     return $pdf->stream("ID-CARD-{$employee->employee_code}.pdf");
-// }
+    $pdf->setPaper('A4', 'portrait');
 
-
-
+    return $pdf->stream("multi-id-card.pdf");
+}
         public function edit(Employee $employee)
         {
             $contractors = Contractor::orderBy('name')->get();
@@ -332,11 +443,8 @@ public function printCard($uuid)
 
         // public function show(Employee $employee)
         // {
-        //     //  $employee->load(['machine', 'contractor']);
-        //     $employees = Machine::orderBy('name')->get();
         //     $contractors = Contractor::orderBy('name')->get();
-        //     // echo"<pre>";print_r($employees);die;
-        //     return view('employees-get.show', compact('employee','employees', 'contractors'));
+        //     return view('employees-get.show', compact('employee', 'contractors'));
         // }
 public function show(Employee $employee)
 {
@@ -362,4 +470,14 @@ public function show(Employee $employee)
 
             return redirect()->route('employees-get.index')->with('success', 'Employee restored successfully!');
         }
+
+        public function toggleStatus(Employee $employee)
+        {
+            $employee->is_active = !$employee->is_active;
+            $employee->save();
+
+            $statusText = $employee->is_active ? 'activated' : 'deactivated';
+            return back()->with('success', "Employee successfully {$statusText}.");
+        }
+
     }

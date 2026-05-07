@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ContractorController extends Controller
 {
@@ -27,8 +28,8 @@ class ContractorController extends Controller
 
         // show only non-deleted (SoftDeletes takes care by default)
         $contractors = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
-
-        return view('contractors.index', compact('contractors'));
+$contractorList = Contractor::orderBy('name')->get();
+        return view('contractors.index', compact('contractors', 'contractorList'));
     }
 
     public function create()
@@ -206,68 +207,311 @@ public function update(Request $request, Contractor $contractor)
         return redirect()->route('contractors.index')
             ->with('success', 'Contractor deleted successfully.');
     }
-public function downloadSingleContractorReport($contractor_id)
+// public function downloadSingleContractorReport($contractor_id)
+// {
+//     $contractor = Contractor::with(['employees.shift'])->findOrFail($contractor_id);
+
+//     // Always use CURRENT month & year (no request params in admin)
+//     $now = now();
+//     $year = $now->year;
+//     $month = $now->month;
+
+//     $generatedAt = $now->format('d M Y, h:i A');
+//     $monthName = $now->format('F Y');
+//     $currentMonthDays = $now->daysInMonth;
+
+//     $summary = [];
+
+//     foreach ($contractor->employees as $emp) {
+//         $monthlySalary = $emp->salary ?? 0;
+//         $perDayPay = $monthlySalary > 0 ? round($monthlySalary / 30, 2) : 0;
+
+//         $present = Attendance::where('employee_id', $emp->id)
+//             ->whereYear('date', $year)
+//             ->whereMonth('date', $month)
+//             ->where('status', 1)->count();
+
+//         $leave = Attendance::where('employee_id', $emp->id)
+//             ->whereYear('date', $year)
+//             ->whereMonth('date', $month)
+//             ->where('status', 0)->count();
+
+//         $halfDay = Attendance::where('employee_id', $emp->id)
+//             ->whereYear('date', $year)
+//             ->whereMonth('date', $month)
+//             ->where('status', 2)->count();
+
+//         $salary_present = $present * $perDayPay;
+//         $salary_half = ($halfDay * $perDayPay) / 2;
+//         $total_salary = round($salary_present + $salary_half, 2);
+
+//         $summary[] = [
+//             'employee'       => $emp,
+//             'present'        => $present,
+//             'leave'          => $leave,
+//             'half_day'       => $halfDay,
+//             'per_day_pay'    => $perDayPay,
+//             'salary_present' => $salary_present,
+//             'salary_half'    => $salary_half,
+//             'total_salary'   => $total_salary,
+//             'month_days'     => $currentMonthDays,
+//         ];
+//     }
+
+//     $pdf = PDF::loadView('reports.contractor_report', [
+//         'contractor'   => $contractor,
+//         'summary'      => $summary,
+//         'generated_at' => $generatedAt,
+//         'month_name'   => $monthName,
+//         'month_days'   => $currentMonthDays,
+//     ])->setPaper('a4', 'portrait');
+
+//     return $pdf->download("Report-{$contractor->name}-{$monthName}.pdf");
+// }
+public function downloadSingleContractorReport(Request $request)
 {
-    $contractor = Contractor::with(['employees.shift'])->findOrFail($contractor_id);
+    $request->validate([
+        'contractor_id' => 'required|exists:contractors,id',
+        'range'         => 'required',
+        'date'          => 'required|date',
+    ]);
 
-    // Always use CURRENT month & year (no request params in admin)
-    $now = now();
-    $year = $now->year;
-    $month = $now->month;
+    $contractor = Contractor::with(['employees.shift'])
+        ->findOrFail($request->contractor_id);
 
-    $generatedAt = $now->format('d M Y, h:i A');
-    $monthName = $now->format('F Y');
-    $currentMonthDays = $now->daysInMonth;
+    $date  = Carbon::parse($request->date);
+    $range = $request->range;
+
+    $generatedAt = now()->format('d M Y, h:i A');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Date Range Filter
+    |--------------------------------------------------------------------------
+    */
+
+    switch ($range) {
+
+        case 'monthly':
+
+            $startDate = $date->copy()->startOfMonth();
+            $endDate   = $date->copy()->endOfMonth();
+            $reportTitle = 'Monthly Report';
+
+        break;
+
+        case '3months':
+
+            $startDate = $date->copy()->subMonths(3)->startOfMonth();
+            $endDate   = $date->copy()->endOfMonth();
+            $reportTitle = 'Last 3 Months Report';
+
+        break;
+
+        case '6months':
+
+            $startDate = $date->copy()->subMonths(6)->startOfMonth();
+            $endDate   = $date->copy()->endOfMonth();
+            $reportTitle = 'Last 6 Months Report';
+
+        break;
+
+        case 'daily':
+        default:
+
+            $startDate = $date->copy()->startOfDay();
+            $endDate   = $date->copy()->endOfDay();
+            $reportTitle = 'Daily Report';
+
+        break;
+    }
 
     $summary = [];
 
     foreach ($contractor->employees as $emp) {
-        $monthlySalary = $emp->salary ?? 0;
-        $perDayPay = $monthlySalary > 0 ? round($monthlySalary / 30, 2) : 0;
 
-        $present = Attendance::where('employee_id', $emp->id)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->where('status', 1)->count();
+        // $monthlySalary = $emp->salary ?? 0;
 
-        $leave = Attendance::where('employee_id', $emp->id)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->where('status', 0)->count();
+        // $perDayPay = $monthlySalary > 0
+        //     ? round($monthlySalary / 30, 2)
+        //     : 0;
+/*
+|--------------------------------------------------------------------------
+| Salary Calculation Based On Salary Type
+|--------------------------------------------------------------------------
+*/
 
-        $halfDay = Attendance::where('employee_id', $emp->id)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->where('status', 2)->count();
+/*
+|--------------------------------------------------------------------------
+| Salary Calculation Based On Salary Type
+|--------------------------------------------------------------------------
+*/
 
-        $salary_present = $present * $perDayPay;
-        $salary_half = ($halfDay * $perDayPay) / 2;
-        $total_salary = round($salary_present + $salary_half, 2);
+$salaryType = strtolower(trim($emp->salary_type ?? 'daily'));
 
-        $summary[] = [
-            'employee'       => $emp,
-            'present'        => $present,
-            'leave'          => $leave,
-            'half_day'       => $halfDay,
-            'per_day_pay'    => $perDayPay,
-            'salary_present' => $salary_present,
-            'salary_half'    => $salary_half,
-            'total_salary'   => $total_salary,
-            'month_days'     => $currentMonthDays,
-        ];
-    }
+/*
+|--------------------------------------------------------------------------
+| Get Salary Amount
+|--------------------------------------------------------------------------
+*/
 
-    $pdf = PDF::loadView('reports.contractor_report', [
-        'contractor'   => $contractor,
-        'summary'      => $summary,
-        'generated_at' => $generatedAt,
-        'month_name'   => $monthName,
-        'month_days'   => $currentMonthDays,
-    ])->setPaper('a4', 'portrait');
+$salaryAmount = (float) ($emp->salary ?? 0);
 
-    return $pdf->download("Report-{$contractor->name}-{$monthName}.pdf");
+if ($salaryType == 'monthly') {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Monthly Salary
+    |--------------------------------------------------------------------------
+    */
+
+    $monthlySalary = $salaryAmount;
+
+    $perDayPay = $monthlySalary > 0
+        ? round($monthlySalary / 30, 2)
+        : 0;
+
+} else {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Daily Salary
+    |--------------------------------------------------------------------------
+    */
+
+    $perDayPay = $salaryAmount;
+}
+        /*
+        |--------------------------------------------------------------------------
+        | Attendance Counts
+        |--------------------------------------------------------------------------
+        */
+
+/*
+|--------------------------------------------------------------------------
+| Attendance Query
+|--------------------------------------------------------------------------
+*/
+
+$attendanceQuery = Attendance::where('employee_id', $emp->id);
+
+if ($range == 'daily') {
+
+    $attendanceQuery->whereDate(
+        'date',
+        $date->format('Y-m-d')
+    );
+
+} else {
+
+    $attendanceQuery->whereBetween(
+        'date',
+        [
+            $startDate->format('Y-m-d 00:00:00'),
+            $endDate->format('Y-m-d 23:59:59')
+        ]
+    );
 }
 
+/*
+|--------------------------------------------------------------------------
+| Attendance Counts
+|--------------------------------------------------------------------------
+*/
+
+$present = (clone $attendanceQuery)
+    ->where('status', 1)
+    ->count();
+
+$leave = (clone $attendanceQuery)
+    ->where('status', 0)
+    ->count();
+
+$halfDay = (clone $attendanceQuery)
+    ->where('status', 2)
+    ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Salary Calculation
+        |--------------------------------------------------------------------------
+        */
+
+        $salary_present = $present * $perDayPay;
+
+        $salary_half = ($halfDay * $perDayPay) / 2;
+
+        $total_salary = round(
+            $salary_present + $salary_half,
+            2
+        );
+
+$summary[] = [
+
+    'employee'       => $emp,
+    'salary_type'   => $salaryType,
+    'present'        => $present,
+    'leave'          => $leave,
+    'half_day'       => $halfDay,
+
+    'per_day_pay'    => $perDayPay,
+
+    'salary_present' => $salary_present,
+    'salary_half'    => $salary_half,
+
+    'total_salary'   => $total_salary,
+
+    // ADD THIS
+    'month_days'     => $startDate->daysInMonth,
+];
+    }
+$totalEmployees = $contractor->employees->count();
+
+$totalMale = $contractor->employees
+    ->where('gender', 'male')
+    ->count();
+
+$totalFemale = $contractor->employees
+    ->where('gender', 'female')
+    ->count();
+
+/*
+|--------------------------------------------------------------------------
+| Today Attendance Marked
+|--------------------------------------------------------------------------
+*/
+
+$todayAttendanceMarked = Attendance::whereIn(
+        'employee_id',
+        $contractor->employees->pluck('id')
+    )
+    ->whereDate('date', now()->toDateString())
+    ->count();
+    $pdf = PDF::loadView('reports.contractor_report', [
+
+        'contractor'   => $contractor,
+        'summary'      => $summary,
+
+        'generated_at' => $generatedAt,
+
+        'report_title' => $reportTitle,
+
+        'startDate'    => $startDate->format('d-m-Y'),
+        'endDate'      => $endDate->format('d-m-Y'),
+            // NEW
+    'totalEmployees'       => $totalEmployees,
+    'totalMale'            => $totalMale,
+    'totalFemale'          => $totalFemale,
+    'todayAttendanceMarked'=> $todayAttendanceMarked,
+
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->download(
+        'Contractor-Report-' .
+        $contractor->name .
+        '.pdf'
+    );
+}
 public function downloadLast3MonthsReport()
 {
     $months = [];

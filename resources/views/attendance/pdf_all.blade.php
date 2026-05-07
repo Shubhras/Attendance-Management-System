@@ -37,7 +37,18 @@
                 <td>{{ $a->employee->employee_code }}</td>
                 <td>{{ $a->clock_in ?? '-' }}</td>
                 <td>{{ $a->clock_out ?? '-' }}</td>
-                <td>{{ ucfirst($a->status) }}</td>
+                <td>
+                @if($a->status == 1)
+                    Present
+                @elseif($a->status == 0)
+                    Leave
+                @elseif($a->status == 2)
+                    Half Day
+                @else
+                    -
+                @endif
+            </td>
+                <!-- <td>{{ ucfirst($a->status) }}</td> -->
             </tr>
             @endforeach
         </tbody>

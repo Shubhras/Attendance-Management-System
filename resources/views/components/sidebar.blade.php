@@ -358,29 +358,36 @@
                     Contractor</a>
             </li> -->
             <li>
-                <a href='/machines'><i class="ri-robot-line text-xl me-6 d-flex w-auto"></i> Machine</a>
+                <a href='/machines'>
+                    <i class="ri-robot-line text-xl me-6 d-flex w-auto"></i>
+                    <span>Machine</span>
+                </a>
             </li>
             <li>
-                <a href='/employees-get'><i class="ri-user-3-line text-xl me-2 w-auto"></i></i>
-                    Employees</a>
+                <a href='/employees-get'><i class="ri-user-3-line text-xl me-2 w-auto"></i>
+                    <span>Employees</span>
+                </a>
             </li>
             <li>
-                <a href='/shifts'><i class="ri-time-line text-xl me-2 w-auto"></i> Add Shift</a>
+                <a href='/shifts'><i class="ri-time-line text-xl me-2 w-auto"></i>
+                    <span>Add Shift</span>
+                </a>
             </li>
             <li>
                 <a href="/attendance">
                     <i class="ri-fingerprint-line text-xl me-2 w-auto"></i>
-                    Attendance
+                    <span>Attendance</span>
                 </a>
             </li>
-                                            <li>
-                        <a href='/operators'><i class="ri-user-3-line text-xl me-2 w-auto"></i> Assign
-                            Operators</a>
-                    </li>
+            <li>
+                <a href='/operators'><i class="ri-user-3-line text-xl me-2 w-auto"></i>
+                    <span>Assign Operators</span>
+                </a>
+            </li>
             <li>
                 <a href="/attendance-summary">
                     <i class="ri-bar-chart-line text-xl me-2 w-auto"></i>
-                    Attendance Summary
+                    <span>Attendance Summary</span>
                 </a>
             </li>
             <li>

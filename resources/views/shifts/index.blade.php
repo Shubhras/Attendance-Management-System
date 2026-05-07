@@ -54,9 +54,12 @@ $subTitle = 'Manage Shifts';
                 <div class="navbar-search">
                     <input type="text" class="bg-base h-40-px w-auto" name="search" value="{{ request('search') }}"
                         placeholder="Search shift name">
-                    <button class="btn" type="submit" style="border:none;background:transparent;">
-                        <iconify-icon icon="ion:search-outline" class="icon"></iconify-icon>
+                    <button class="btn btn-primary" type="submit">
+                        Submit
                     </button>
+                            <a href="{{ route('shifts.index') }}" class="btn btn-secondary">
+                                Reset
+                            </a>
                 </div>
             </form>
         </div>

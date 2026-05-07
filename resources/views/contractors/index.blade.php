@@ -6,31 +6,31 @@ $subTitle = 'Contractors';
 
 @section('content')
 <!-- Flash Messages -->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-            <strong>Success!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+    <strong>Success!</strong> {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
 
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-            <strong>Error!</strong> {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+    <strong>Error!</strong> {{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
 
-    @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-            <strong>Validation Error!</strong> Please check the form below.
-            <ul class="mb-0 mt-2">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+@if($errors->any())
+<div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+    <strong>Validation Error!</strong> Please check the form below.
+    <ul class="mb-0 mt-2">
+        @foreach($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
 <div class="card h-100 p-0 radius-12">
     <div
         class="card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between">
@@ -49,15 +49,71 @@ $subTitle = 'Contractors';
                     <input type="text" class="bg-base h-40-px w-auto" name="search" value="{{ request('search') }}"
                         placeholder="Search">
                     <button class="btn btn-primary" type="submit">
-                       submit
+                        submit
                     </button>
                 </div>
-                                <!-- Last 3 Months Report Button -->
-            <a href="{{ route('contractors.report.last3months') }}"
-               class="btn btn-success text-sm btn-sm px-16 py-12 radius-8 d-flex align-items-center gap-2">
-                <iconify-icon icon="solar:download-bold" class="icon"></iconify-icon>
-                Last 3 Months Report
-            </a>    
+                <!-- Last 3 Months Report Button -->
+                <a href="{{ route('contractors.report.last3months') }}"
+                    class="btn btn-success text-sm btn-sm px-16 py-12 radius-8 d-flex align-items-center gap-2">
+                    <iconify-icon icon="solar:download-bold" class="icon"></iconify-icon>
+                    Last 3 Months Report
+                </a>
+            </form>
+            <form action="{{ route('contractor.report.download') }}" method="GET" class="row g-2">
+
+                <div class="col-md-3">
+                    <select name="contractor_id" class="form-select form-select-sm h-40-px" style="max-width:220px;">
+
+                        <option value="">Select Contractor</option>
+
+                        @foreach($contractorList as $contractor)
+
+                        <option value="{{ $contractor->id }}"
+                            {{ request('contractor_id') == $contractor->id ? 'selected' : '' }}>
+
+                            {{ $contractor->name }}
+
+                        </option>
+
+                        @endforeach
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <input type="date" name="date" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="range" class="form-select" required>
+
+                        <option value="daily">
+                            Daily
+                        </option>
+
+                        <option value="monthly">
+                            Monthly
+                        </option>
+
+                        <option value="3months">
+                            Last 3 Months
+                        </option>
+
+                        <option value="6months">
+                            Last 6 Months
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+
+                        Download PDF
+
+                    </button>
+                </div>
+
             </form>
         </div>
         <button type="button"
@@ -117,12 +173,13 @@ $subTitle = 'Contractors';
                                     title="Edit">
                                     <iconify-icon icon="lucide:edit" class="menu-icon"></iconify-icon>
                                 </a>
-                            <!-- Download Report Button -->
-                                    <a href="{{ route('contractors.report.download', $contractor->id) }}?month={{ now()->month }}&year={{ now()->year }}"
+                                <!-- Download Report Button -->
+                                <a href="{{ route('contractors.report.download', $contractor->id) }}?month={{ now()->month }}&year={{ now()->year }}"
                                     class="bg-info-focus text-info bg-hover-info-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle"
                                     title="Download Monthly Report">
-                                        <iconify-icon icon="solar:download-minimalistic-bold" class="menu-icon"></iconify-icon>
-                                    </a>
+                                    <iconify-icon icon="solar:download-minimalistic-bold" class="menu-icon">
+                                    </iconify-icon>
+                                </a>
                                 <form method="POST" action="{{ route('contractors.destroy', $contractor->uuid) }}"
                                     style="display:inline;">
                                     @csrf
@@ -263,17 +320,17 @@ $subTitle = 'Contractors';
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             {{--<form method="POST" id="deleteForm" action="{{ route('contractors.destroy', $contractor->uuid) }}">
-                @csrf
-                @method('DELETE')
-                <div class="modal-body">
-                    <p>Are you sure you want to delete <strong id="deleteName"></strong> ?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button"
-                        class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-24 py-8 radius-8"
-                        data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger px-24 py-8 radius-8">Delete</button>
-                </div>
+            @csrf
+            @method('DELETE')
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteName"></strong> ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                    class="border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-24 py-8 radius-8"
+                    data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger px-24 py-8 radius-8">Delete</button>
+            </div>
             </form>--}}
         </div>
     </div>

@@ -250,7 +250,8 @@ Route::get('/contractors/report/last-3-months', [ContractorController::class, 'd
 ]);
 Route::get('/employees/{uuid}/print-card', [EmployeesController::class, 'printCard'])
      ->name('employees-get.print-card');
-
+Route::get('/employees/print-multiple', [EmployeesController::class, 'printMultiple']);
+    Route::post('/employees-get/{employee}/toggle-status', [EmployeesController::class, 'toggleStatus'])->name('employees-get.toggle-status');
     Route::post('/employees-get/{uuid}/restore', [EmployeesController::class, 'restore'])->name('employees.restore');
     Route::resource('operators', OperatorController::class);
     // Attendance Module
@@ -303,3 +304,22 @@ Route::get('/attendance-summary', [AttendanceController::class, 'summary'])
 Route::fallback(function () {
     return redirect()->route('signin');
 });
+Route::get('/machine-consumption-export', [DashboardController::class, 'exportMachineConsumption'])
+    ->name('dashboard.machine-consumption.export');
+//     Route::get('/attendance/export/pdf', 
+//     [AttendanceController::class, 'exportwithempAttendance1']
+// )->name('attendance.exportwithempAttendance');
+// Route::get('/attendance/export/full-report',
+//     [AttendanceController::class, 'exportwithempAttendance']
+// )->name('attendance.export.full');
+Route::get('/attendance/export/machine-summary',
+    [AttendanceController::class, 'exportMachineSummary'])
+    ->name('attendance.export.machine');
+
+Route::get('/attendance/export/employee-details',
+    [AttendanceController::class, 'exportEmployeeDetails'])
+    ->name('attendance.export.employee');
+    Route::get(
+    '/contractor/report/download',
+    [ContractorController::class, 'downloadSingleContractorReport']
+)->name('contractor.report.download');

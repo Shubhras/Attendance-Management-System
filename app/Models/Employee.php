@@ -41,6 +41,7 @@ class Employee extends Model
         'is_hr',
         'employee_code',
         'aadhar_card',
+        'is_active',
         'created_by',
         'deleted_by',
     ];
@@ -59,15 +60,19 @@ class Employee extends Model
     {
         return 'uuid';
     }
+// public function shift()
+// {
+//     return $this->belongsTo(Shift::class, 'shift_id');
+// }
 public function shift()
 {
-    return $this->belongsTo(Shift::class, 'shift_id');
+    return $this->belongsTo(Shift::class);
 }
     // ✅ Relationships
-    public function contractor()
-    {
-        return $this->belongsTo(Contractor::class);
-    }
+    // public function contractor()
+    // {
+    //     return $this->belongsTo(Contractor::class);
+    // }
 
     public function creator()
     {
@@ -134,5 +139,9 @@ public function machine()
 public function machineRelation()
 {
     return $this->belongsTo(Machine::class, 'machine_id', 'id')->withTrashed();
+}
+public function contractor()
+{
+    return $this->belongsTo(Contractor::class, 'contractor_id');
 }
 }

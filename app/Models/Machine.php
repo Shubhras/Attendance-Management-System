@@ -59,4 +59,8 @@ class Machine extends Model
     {
         return $value ? json_decode($value, true) : [];
     }
+        public function employees()
+    {
+        return $this->hasMany(Employee::class, 'machine_id');
+    }
 }

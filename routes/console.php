@@ -20,3 +20,7 @@ Schedule::command('attendance:auto-leave')
 // Night shift closes at 08:00 → run auto-leave at 09:00
 Schedule::command('attendance:auto-leave')
     ->dailyAt('09:00');
+
+// Employee Inactivity Deactivation Checker
+Schedule::command('app:deactivate-inactive-employees')
+    ->daily();

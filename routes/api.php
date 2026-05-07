@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/thumb-machine/store', [OperatorAuthController::class, 'storeThumb']);
     Route::post('/advance-payments', [AdvancePaymentController::class, 'store']);
     Route::post('/hr/salary/pay', [SalaryPaymentController::class, 'store']);
-
+    Route::get('/with-fingerprint/employee-get', [OperatorAuthController::class, 'employeefingerprintData']);
         // Operator side
     Route::get('/operator/employees', [OperatorAttendanceController::class, 'assignedEmployees']);
     Route::post('/operator/attendance/mark', [OperatorAttendanceController::class, 'markAttendance']);

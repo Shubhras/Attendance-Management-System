@@ -1328,4 +1328,49 @@ public function withfingerprintData(Request $request)
         ],
     ]);
 }
+
+public function employeefingerprintData()
+{
+    $employees = Employee::where('fingerprint', 1)
+        ->whereNotNull('fingerprint_template_data')
+        ->where('is_active', 1) 
+        ->get();
+
+    $response = $employees->map(function ($emp) {
+
+        $data = $emp->fingerprint_template_data;
+
+        // ✅ Handle both cases (array or string)
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        // ✅ extract only captureTemplet
+        $captureTemplate = $data['captureTemplet'] ?? null;
+
+        // ✅ remove newline & spaces (clean base64)
+        if ($captureTemplate) {
+            $captureTemplate = preg_replace('/\s+/', '', $captureTemplate);
+        }
+
+        // ✅ fix image URL (avoid double domain issue)
+        $profileImg = null;
+        if ($emp->photo) {
+            $profileImg = filter_var($emp->photo, FILTER_VALIDATE_URL)
+                ? $emp->photo
+                : url($emp->photo);
+        }
+
+        return [
+            'id' => $emp->id,
+            'name' => $emp->name,
+            'empId' => $emp->employee_code,
+            'profileimg' => $profileImg,
+            'fingerprintdata' => $captureTemplate,
+            'machinename' => 'MFS500',
+        ];
+    });
+
+    return response()->json($response);
+}
 }
