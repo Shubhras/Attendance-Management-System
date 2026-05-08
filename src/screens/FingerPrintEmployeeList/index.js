@@ -55,46 +55,85 @@ const FingerPrintEmployeeList = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
+  // const getEmployee = async (pageNumber, searchText, reset = false) => {
+  //   if (loading) return;
+
+  //   setLoading(true);
+  //   try {
+  //     const response = await getEmployeList(
+  //       token,
+  //       searchText,
+  //       pageNumber,
+  //       true,
+  //     );
+  //     console.log('GetEmployeesWithoutFingerprint', response);
+
+  //     if (response?.status === true) {
+  //       const newData = response?.data || [];
+  //       const currentPage = response?.pagination?.current_page;
+  //       const lastPage = response?.pagination?.last_page;
+
+  //       // Set employees list
+  //       if (reset) {
+  //         setEmployee(newData);
+  //       } else {
+  //         setEmployee(prev => [...prev, ...newData]);
+  //       }
+  //       // 🚀 REAL pagination logic
+  //       setHasMore(currentPage < lastPage);
+  //     }
+  //   } catch (error) {
+  //     // showMessage({
+  //     //   message: 'Error',
+  //     //   description: 'Something went wrong. Please try again.',
+  //     //   type: 'danger',
+  //     // });
+  //     console.log('error', error);
+  //     setHasMore(false);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const getEmployee = async (pageNumber, searchText, reset = false) => {
     if (loading) return;
 
     setLoading(true);
-    try {
-      const response = await getEmployeList(
-        token,
-        searchText,
-        pageNumber,
-        true,
-      );
-      console.log('GetEmployeesWithoutFingerprint', response);
 
-      if (response?.status === true) {
+    getEmployeList(token, searchText, pageNumber, true)
+      .then(response => {
+        console.log('AttendanceEmployeeList', response);
+
         const newData = response?.data || [];
-        const currentPage = response?.pagination?.current_page;
-        const lastPage = response?.pagination?.last_page;
 
-        // Set employees list
-        if (reset) {
-          setEmployee(newData);
+        // ✅ HANDLE BOTH TRUE + FALSE STATUS
+        if (response?.status === true) {
+          const currentPage = response?.pagination?.current_page;
+          const lastPage = response?.pagination?.last_page;
+
+          if (reset) {
+            setEmployee(newData);
+          } else {
+            setEmployee(prev => [...prev, ...newData]);
+          }
+
+          setHasMore(currentPage < lastPage);
         } else {
-          setEmployee(prev => [...prev, ...newData]);
+          // 🚨 IMPORTANT FIX
+          if (reset) {
+            setEmployee([]); // clear list on search
+          }
+          setHasMore(false);
         }
-        // 🚀 REAL pagination logic
-        setHasMore(currentPage < lastPage);
-      }
-    } catch (error) {
-      // showMessage({
-      //   message: 'Error',
-      //   description: 'Something went wrong. Please try again.',
-      //   type: 'danger',
-      // });
-      console.log('error', error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
+      })
+      .catch(error => {
+        console.log('API Error ===>', error);
+        setHasMore(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
-
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
@@ -197,7 +236,7 @@ const FingerPrintEmployeeList = ({ navigation }) => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          ListEmptyComponent={EmptyList}
+          // ListEmptyComponent={EmptyList}
           // ListEmptyComponent={
           //   !loading && (
           //     <View style={{ alignItems: 'center', marginTop: scale(180) }}>
@@ -221,6 +260,7 @@ const FingerPrintEmployeeList = ({ navigation }) => {
           // }
         />
       </View>
+      {employee.length == 0 && EmptyList()}
     </SafeAreaView>
   );
 };

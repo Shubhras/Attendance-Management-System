@@ -23,7 +23,8 @@ export const getHomeData = countData => {
       subtitleValue: '',
       icon: require('../assets/images/Animation/Attendance.gif'),
       defaultSource: Attendance,
-      onPress: 'MarkAttendance',
+      onPress: 'AddAttendanceView',
+      // onPress: 'MarkAttendance',
     },
     {
       id: 3,

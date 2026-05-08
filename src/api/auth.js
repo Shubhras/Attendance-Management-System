@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../../env';
+// import employeesList from '../../employees_5000.json';
 
 export const LoginAPI = async data => {
   return new Promise((resolve, reject) => {
@@ -375,6 +376,38 @@ export const hrPaySalary = async (token, data) => {
         Authorization: `Bearer ${token}`,
       },
       data: data,
+    };
+    console.log("configconfig",config);
+    
+    axios
+      .request(config)
+      .then(response => {
+        resolve(response.data);
+      })
+      .catch(error => {
+        if (error.response) {
+          reject(error.response.data);
+        } else if (error.request) {
+          reject(error);
+        } else {
+          reject(error);
+        }
+      });
+  });
+};
+
+export const fetchEmployees = async (token) => {
+  return new Promise((resolve, reject) => {
+    // resolve(employeesList);
+    // return
+    const config = {
+      method: 'GET',
+      url: `${API_URL}/api/with-fingerprint/employee-get`,
+
+      headers: {
+        'Content-Type': 'Application/json',
+        Authorization: `Bearer ${token}`,
+      },
     };
     console.log("configconfig",config);
     

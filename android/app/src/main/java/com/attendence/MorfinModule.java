@@ -347,6 +347,49 @@ public class MorfinModule extends ReactContextBaseJavaModule implements MorfinAu
         }
     }
 
+
+    @ReactMethod
+    public void matchTemplatesFast(String capturedTemplate, ReadableArray templates, String format, Promise promise) {
+        try {
+            byte[] captured = Base64.decode(capturedTemplate, Base64.DEFAULT);
+
+            TemplateFormat templateFormat = TemplateFormat.FMR_V2005;
+            if (format.equals("FMR_V2011")) templateFormat = TemplateFormat.FMR_V2011;
+            if (format.equals("ANSI_V378")) templateFormat = TemplateFormat.ANSI_V378;
+
+            int bestScore = -1;
+            int bestIndex = -1;
+
+            for (int i = 0; i < templates.size(); i++) {
+                byte[] empTemplate = Base64.decode(templates.getString(i), Base64.DEFAULT);
+
+                int[] score = new int[1];
+
+                int ret = morfinAuth.MatchTemplate(
+                        captured,
+                        empTemplate,
+                        score,
+                        templateFormat
+                );
+
+                if (ret >= 0 && score[0] > bestScore) {
+                    bestScore = score[0];
+                    bestIndex = i;
+                }
+            }
+
+            WritableMap map = Arguments.createMap();
+            map.putInt("score", bestScore);
+            map.putInt("index", bestIndex);
+            map.putBoolean("matched", bestScore >= 90);
+
+            promise.resolve(map);
+
+        } catch (Exception e) {
+            promise.reject("MATCH_ERROR", e.getMessage());
+        }
+    }
+
     // -------------------- REQUIRED CALLBACK METHODS ------------------------
 
     @Override

@@ -40,87 +40,94 @@ const MyEmployee = ({ navigation }) => {
   const token = user?.access_token;
   console.log('token', token);
 
-  useFocusEffect(
-    useCallback(() => {
-      getEmployee(page, search, true);
-    }, [page, search, true]),
-  );
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setPage(1);
+      getEmployee(1, search, true); // Always load latest list
+    });
 
-  const getEmployee = useCallback(
-    (pageNumber, searchText, reset = false) => {
-      if (loading) return;
-      setLoading(true);
-      getEmployeList(token, searchText, pageNumber)
-        .then(response => {
-          console.log('AttendanceEmployeeList', response);
+    return unsubscribe;
+  }, [navigation]);
 
-          // Updated code with pagination logic
-          if (response?.status === true) {
-            const newData = response?.data || [];
-            const currentPage = response?.pagination?.current_page;
-            const lastPage = response?.pagination?.last_page;
+  // const getEmployee = useCallback(
+  //   (pageNumber, searchText, reset = false) => {
+  //     if (loading) return;
+  //     setLoading(true);
+  //     getEmployeList(token, searchText, pageNumber)
+  //       .then(response => {
+  //         console.log('AttendanceEmployeeList', response);
 
-            // Set employees list
-            if (reset) {
-              setEmployee(newData);
-            } else {
-              setEmployee(prev => [...prev, ...newData]);
-            }
+  //         // Updated code with pagination logic
+  //         if (response?.status === true) {
+  //           const newData = response?.data || [];
+  //           const currentPage = response?.pagination?.current_page;
+  //           const lastPage = response?.pagination?.last_page;
 
-            // 🚀 REAL pagination logic
-            setHasMore(currentPage < lastPage);
+  //           // Set employees list
+  //           if (reset) {
+  //             setEmployee(newData);
+  //           } else {
+  //             setEmployee(prev => [...prev, ...newData]);
+  //           }
+
+  //           // 🚀 REAL pagination logic
+  //           setHasMore(currentPage < lastPage);
+  //         }
+  //       })
+  //       .catch(error => {
+  //         console.log('API Error ===>', error);
+  //         setHasMore(false);
+  //         // showMessage({
+  //         //   message: 'Error',
+  //         //   description: 'Something went wrong. Please try again.',
+  //         //   type: 'danger',
+  //         // });
+  //       })
+  //       .finally(() => {
+  //         setLoading(false);
+  //       });
+  //   },
+  //   [loading, token],
+  // );
+  const getEmployee = async (pageNumber, searchText, reset = false) => {
+    if (loading) return;
+
+    setLoading(true);
+
+    getEmployeList(token, searchText, pageNumber)
+      .then(response => {
+        console.log('AttendanceEmployeeList', response);
+
+        const newData = response?.data || [];
+
+        // ✅ HANDLE BOTH TRUE + FALSE STATUS
+        if (response?.status === true) {
+          const currentPage = response?.pagination?.current_page;
+          const lastPage = response?.pagination?.last_page;
+
+          if (reset) {
+            setEmployee(newData);
+          } else {
+            setEmployee(prev => [...prev, ...newData]);
           }
-        })
-        .catch(error => {
-          console.log('API Error ===>', error);
+
+          setHasMore(currentPage < lastPage);
+        } else {
+          // 🚨 IMPORTANT FIX
+          if (reset) {
+            setEmployee([]); // clear list on search
+          }
           setHasMore(false);
-          // showMessage({
-          //   message: 'Error',
-          //   description: 'Something went wrong. Please try again.',
-          //   type: 'danger',
-          // });
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    },
-    [loading, token],
-  );
-
-  // const getEmployee = async (pageNumber, searchText, reset = false) => {
-  //   if (loading) return;
-
-  //   setLoading(true);
-  //   try {
-  //     const response = await getEmployeList(token, searchText, pageNumber);
-  //     console.log('GetEmployeesWithoutFingerprint', response);
-
-  //     if (response?.status === true) {
-  //       const newData = response?.data || [];
-  //       const currentPage = response?.pagination?.current_page;
-  //       const lastPage = response?.pagination?.last_page;
-
-  //       // Set employees list
-  //       if (reset) {
-  //         setEmployee(newData);
-  //       } else {
-  //         setEmployee(prev => [...prev, ...newData]);
-  //       }
-
-  //       // 🚀 REAL pagination logic
-  //       setHasMore(currentPage < lastPage);
-  //     }
-  //   } catch (error) {
-  //     showMessage({
-  //       message: 'Error',
-  //       description: 'Something went wrong. Please try again.',
-  //       type: 'danger',
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
+        }
+      })
+      .catch(error => {
+        console.log('API Error ===>', error);
+        setHasMore(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
@@ -133,8 +140,8 @@ const MyEmployee = ({ navigation }) => {
     debounce(value => {
       setPage(1);
       getEmployee(1, value, true);
-    }, 2000), // Delay of 500 milliseconds
-    [],
+    }, 500),
+    [token],
   );
 
   const renderFooter = () =>
@@ -218,7 +225,7 @@ const MyEmployee = ({ navigation }) => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          ListEmptyComponent={EmptyList}
+          // ListEmptyComponent={EmptyList}
           // ListEmptyComponent={
           //   !loading && (
           //     <View style={{ alignItems: 'center', marginTop: scale(180) }}>
@@ -242,6 +249,7 @@ const MyEmployee = ({ navigation }) => {
           // }
         />
       </View>
+      {employee.length == 0 && EmptyList()}
     </SafeAreaView>
   );
 };

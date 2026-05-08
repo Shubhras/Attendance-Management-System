@@ -12,6 +12,7 @@ import { showMessage } from 'react-native-flash-message';
 import { useSelector } from 'react-redux';
 import { CustomText } from '../../components/global/CustomComponents.js';
 import { getByMachineEmployeList } from '../../api/auth.js';
+import EmptyCart from '../../components/alerts/EmptyCart/index.js';
 
 // Debounce function
 function debounce(func, delay) {
@@ -119,6 +120,9 @@ const MachineEmployeeList = ({ navigation, route }) => {
       />
     );
   };
+  const EmptyList = () => {
+    return !loading && <EmptyCart message="No employees found" />;
+  };
   return (
     <CustomSafeAreaView
       statusBarBackgroundColor={LightThemeColors.titleColor}
@@ -169,29 +173,30 @@ const MachineEmployeeList = ({ navigation, route }) => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          ListEmptyComponent={
-            !loading && (
-              <View style={{ alignItems: 'center', marginTop: scale(180) }}>
-                <Icons
-                  name="people-outline"
-                  iconType="Ionicons"
-                  size={scale(60)}
-                  color={LightThemeColors.titleColor}
-                />
-                <View style={{ height: scale(10) }} />
-                <CustomText
-                  style={[
-                    styles.text,
-                    { color: LightThemeColors.textHighContrast },
-                  ]}
-                >
-                  No employees found
-                </CustomText>
-              </View>
-            )
-          }
+          // ListEmptyComponent={
+          //   !loading && (
+          //     <View style={{ alignItems: 'center', marginTop: scale(180) }}>
+          //       <Icons
+          //         name="people-outline"
+          //         iconType="Ionicons"
+          //         size={scale(60)}
+          //         color={LightThemeColors.titleColor}
+          //       />
+          //       <View style={{ height: scale(10) }} />
+          //       <CustomText
+          //         style={[
+          //           styles.text,
+          //           { color: LightThemeColors.textHighContrast },
+          //         ]}
+          //       >
+          //         No employees found
+          //       </CustomText>
+          //     </View>
+          //   )
+          // }
         />
       </View>
+      {employee.length == 0 && EmptyList()}
     </CustomSafeAreaView>
   );
 };

@@ -200,7 +200,7 @@ const HrEmployeeScreen = ({ navigation }) => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          ListEmptyComponent={EmptyList}
+          // ListEmptyComponent={EmptyList}
           // ListEmptyComponent={
           //   !loading && (
           //     <View style={{ alignItems: 'center', marginTop: scale(180) }}>
@@ -224,6 +224,7 @@ const HrEmployeeScreen = ({ navigation }) => {
           // }
         />
       </View>
+      {employee.length == 0 && EmptyList()}
     </SafeAreaView>
   );
 };

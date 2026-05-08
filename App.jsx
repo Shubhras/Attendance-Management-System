@@ -10,6 +10,9 @@ import { Provider } from 'react-redux';
 import store, { persistor } from './src/redux/store/Store';
 import { PersistGate } from 'redux-persist/integration/react';
 
+import {createTable, syncEmployees} from "./db";
+// import { insertEmployees } from "./insert";
+
 // create a component
 const App = () => {
   // Local states
@@ -23,6 +26,8 @@ const App = () => {
       setIsStarting(false);
     }, 3500);
   }, []);
+
+
 
   // Checking
   if (isStarting) {

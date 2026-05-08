@@ -16,6 +16,7 @@ import Button from '../../buttons/Button';
 import Morfin from '../../../../MorfinAuth';
 import { AddFingerPrint } from '../../../api/auth';
 import { Images } from '../../../constants/images';
+import { createTable, syncEmployees } from '../../../../db';
 
 const AddFingerPrintBottomSheet = ({
   sheetRef,
@@ -75,7 +76,10 @@ const AddFingerPrintBottomSheet = ({
       setStatus('Error: ' + e.message);
     }
   };
-
+  const init = async () => {
+    await createTable(); // create DB
+    await syncEmployees(token); // API → DB
+  };
   // const verifyMatch = async () => {
   //   if (!template1 || !template2)
   //     return setStatus("Scan both fingers first!");
@@ -122,6 +126,7 @@ const AddFingerPrintBottomSheet = ({
           setAttendance(false);
           setStatus('');
           setFingerImage('');
+          init();
           onUpdatedFinger();
         }, 4000);
       })

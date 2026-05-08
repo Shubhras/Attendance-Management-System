@@ -10,4 +10,7 @@ export default {
   getImage: () => MorfinAuthModule.getImage(),
   matchTemplates: (t1, t2) => MorfinAuthModule.matchTemplates(t1, t2, "FMR_V2005"),
 
+   // 🔥 NEW (IMPORTANT)
+   matchTemplatesFast: (captured, templates) =>
+    MorfinAuthModule.matchTemplatesFast(captured, templates, "FMR_V2005"),
 };

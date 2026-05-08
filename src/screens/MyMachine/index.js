@@ -189,9 +189,10 @@ const MyMachine = ({ navigation, route }) => {
               }}
             />
           )}
-          ListEmptyComponent={EmptyList}
+          // ListEmptyComponent={EmptyList}
         />
       </View>
+      {machines.length == 0 && EmptyList()}
     </SafeAreaView>
   );
 };
