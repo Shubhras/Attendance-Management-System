@@ -126,7 +126,7 @@ const HomeScreen = ({ navigation }) => {
                   if (item?.onPress == 'MyExport') {
                     bottomSheetRef.current?.expand();
                   } else {
-                    navigation.navigate(item?.onPress);
+                    navigation.navigate(item?.onPress, {cardData:item});
                   }
                 }}
               />

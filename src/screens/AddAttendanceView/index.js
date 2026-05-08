@@ -5,6 +5,7 @@ import {
   StatusBar,
   Image,
   Pressable,
+  Text,
 } from 'react-native';
 import FastImage from '@d11/react-native-fast-image';
 import styles from './styles';
@@ -21,7 +22,13 @@ import { FONT_SIZE_LG, SCREEN_WIDTH } from '../../config/Constants';
 import Icons from '../../components/Icons/Icons';
 import { scale } from 'react-native-size-matters';
 
-const AddAttendanceView = ({ navigation }) => {
+const AddAttendanceView = ({ navigation, route }) => {
+  const myCardData = route?.params?.myCardData || {};
+  const machineItem = route?.params?.machineItem || {};
+
+  console.log('myCardDatamyCardData', myCardData);
+  console.log('machineItemmachineItem', machineItem);
+
   const [attendance, setAttendance] = useState(false);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
@@ -137,10 +144,9 @@ const AddAttendanceView = ({ navigation }) => {
       scan_status: 1,
       clock_in: '',
       clock_out: '',
-      // machine_id: 20,
+      machine_id: machineItem?.id ? machineItem?.id : null,
     };
     console.log('data', data);
-
     AttendanceMark(access_token, data)
       .then(response => {
         console.log('GetEmployeesWithoutFingerprint', response);
@@ -178,7 +184,7 @@ const AddAttendanceView = ({ navigation }) => {
         translucent={true} // Allow content to draw under the status bar
       />
       <Pressable
-        style={{ padding: scale(20) }}
+        style={{ padding: scale(20), flexDirection: 'row' }}
         onPress={() => {
           navigation.goBack();
         }}
@@ -189,7 +195,30 @@ const AddAttendanceView = ({ navigation }) => {
           size={scale(22)}
           color={Colors.black}
         />
+        <View>
+          <Text
+            style={[
+              styles.fingerTitle,
+              { color: Colors.black, marginLeft: scale(10) },
+            ]}
+          >
+            {myCardData?.title || 'Add Attendance'}
+          </Text>
+        </View>
       </Pressable>
+      {machineItem?.name && (
+        <Text
+          style={[
+            styles.fingerTitle,
+            { color: Colors.black, marginLeft: scale(10) },
+          ]}
+        >
+          Machine Name:{' '}
+          {machineItem?.name
+            ? machineItem?.name
+            : myCardData?.title || 'Add Attendance'}
+        </Text>
+      )}
       <View style={styles.mainwrapper}>
         {/* 👤 MATCHED USER */}
         {matchedUser && (

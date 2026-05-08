@@ -36,8 +36,10 @@ function debounce(func, delay) {
 }
 
 const MyMachine = ({ navigation, route }) => {
-  const { param } = route.params || {};
-  console.log('title', param);
+  const { param } = route?.params || {};
+  
+  const myCardData = route?.params?.cardData || {};
+  console.log('myCardData', myCardData);
 
   const [loading, setLoading] = useState(false);
   const [machines, setMachines] = useState([]);
@@ -135,7 +137,7 @@ const MyMachine = ({ navigation, route }) => {
       <View style={[styles.mainWrapper, { backgroundColor: Colors.white }]}>
         <Header
           back={true}
-          title={'Machines'}
+          title={myCardData?.title ? myCardData?.title : 'Machines'}
           headerBg={LightThemeColors.titleColor}
           iconColor={Colors.white}
           style={{ height: scale(50) }}
@@ -183,9 +185,16 @@ const MyMachine = ({ navigation, route }) => {
               image={item?.image}
               managerName={item?.manager_names}
               onPress={() => {
-                navigation.navigate('MachineEmployeeList', {
-                  machineItem: item,
-                });
+                if (myCardData?.type == 'machineattendance') {
+                  navigation.navigate('AddAttendanceView', {
+                    machineItem: item,
+                    myCardData:myCardData
+                  });
+                } else {                  
+                  navigation.navigate('MachineEmployeeList', {
+                    machineItem: item,
+                  });
+                }
               }}
             />
           )}
