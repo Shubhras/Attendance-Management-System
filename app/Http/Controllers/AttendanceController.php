@@ -718,13 +718,29 @@ public function singleMarkForm(Request $request)
 //         ->route('attendance.index')
 //         ->with('success', 'Attendance marked successfully!');
 // }
+public function createSingle(Request $request)
+{
+    $employee = Employee::findOrFail($request->employee_id);
 
+    $machines = Machine::all();
+
+    return view('attendance.single_mark', compact(
+        'employee',
+        'machines'
+    ))->with([
+        'date' => $request->date,
+        'machineId' => $employee->machine_id
+    ]);
+}
 public function storeSingle(Request $request)
 {
     $request->validate([
         'employee_id' => 'required|exists:employees,id',
         'status'      => 'required|in:0,1,2',
         'date'        => 'required|date',
+        'machine_id'  => 'nullable|exists:machines,id',
+        'clock_in'    => 'nullable',
+        'clock_out'   => 'nullable',
     ]);
 
     $status = (int) $request->status;
@@ -733,34 +749,42 @@ public function storeSingle(Request $request)
 
     $employee = Employee::findOrFail($request->employee_id);
 
-    // Find existing attendance
     $attendance = Attendance::firstOrNew([
         'employee_id' => $employee->id,
         'date'        => $selectedDate,
     ]);
 
-    // Machine ID
-    $machineId = $employee->machine_id ?? null;
+    $machineId = $request->machine_id ?: $employee->machine_id;
 
-    // Default values
+    if ($request->filled('machine_id')) {
+        $employee->machine_id = $request->machine_id;
+        $employee->save();
+    }
+
     $clockIn  = null;
     $clockOut = null;
 
-    // Present
     if ($status == 1) {
 
-        $clockIn  = $now->format('H:i:s');
-        $clockOut = $now->copy()->addHours(8)->format('H:i:s');
+        $clockIn = $request->clock_in
+            ? $request->clock_in
+            : $now->format('H:i:s');
 
+        $clockOut = $request->clock_out
+            ? $request->clock_out
+            : $now->copy()->addHours(8)->format('H:i:s');
+
+    } elseif ($status == 2) {
+
+        $clockIn = $request->clock_in
+            ? $request->clock_in
+            : $now->format('H:i:s');
+
+        $clockOut = $request->clock_out
+            ? $request->clock_out
+            : $now->copy()->addHours(4)->format('H:i:s');
     }
-    // Half Day
-    elseif ($status == 2) {
 
-        $clockIn  = $now->format('H:i:s');
-        $clockOut = $now->copy()->addHours(4)->format('H:i:s');
-    }
-
-    // Update attendance
     $attendance->status       = $status;
     $attendance->scan_status  = 0;
     $attendance->slot1        = $now;
@@ -773,7 +797,6 @@ public function storeSingle(Request $request)
 
     $attendance->save();
 
-    // Update employee status
     $employee->update([
         'attendance_status' => $status
     ]);

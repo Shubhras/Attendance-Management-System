@@ -265,6 +265,8 @@ Route::get('/attendance/mark', [AttendanceController::class, 'singleMarkForm'])
 
 Route::post('/attendance/mark', [AttendanceController::class, 'storeSingle'])
     ->name('attendance.storeSingle');
+    Route::get('/attendance/mark', [AttendanceController::class, 'createSingle'])
+    ->name('attendance.singleMark');
 // PDF
 Route::get('/attendance-export/all', [AttendanceController::class, 'exportAll'])->name('attendance.exportAll');
 Route::get('/attendance-export/employee/{id}', [AttendanceController::class, 'exportEmployee'])->name('attendance.exportEmployee');

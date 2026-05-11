@@ -12,20 +12,42 @@
         @csrf
 
         <input type="hidden" name="employee_id" value="{{ $employee->id }}">
-        <input type="hidden" name="date" value="{{ $date }}">
-        <input type="hidden" name="machine_id" value="{{ $machineId }}">
+        <input type="date"
+       name="date"
+       class="form-control"
+       value="{{ $date ?? now()->format('Y-m-d') }}">
+        <!-- <input type="hidden" name="date" value="{{ $date }}"> -->
+        <!-- <input type="hidden" name="machine_id" value="{{ $machineId }}"> -->
         <div class="row g-3">
 
             <div class="col-md-6">
                 <label class="form-label">Employee</label>
                 <input type="text" class="form-control" value="{{ $employee->name }}" readonly>
             </div>
-
-            <div class="col-md-6">
+<div class="col-md-6">
+    <label class="form-label">Date</label>
+    <input type="date"
+           name="date"
+           class="form-control"
+           value="{{ $date ?? now()->format('Y-m-d') }}">
+</div>
+            <!-- <div class="col-md-6">
                 <label class="form-label">Date</label>
-                <input type="date" class="form-control" value="{{ $date }}" readonly>
-            </div>
+                <input type="date" class="form-control" value="{{ $date }}">
+            </div> -->
+            <div class="col-md-4">
+                <label class="form-label">Machine</label>
+                <select name="machine_id" class="form-select">
+                    <option value="">Select Machine</option>
 
+                    @foreach($machines as $machine)
+                        <option value="{{ $machine->id }}"
+                            {{ $machineId == $machine->id ? 'selected' : '' }}>
+                            {{ $machine->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-md-4">
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select">

@@ -820,15 +820,168 @@ class OperatorAttendanceController extends Controller
 //         'record'            => $attendance
 //     ]);
 // }
+
+// may 8
+// public function markAttendance(Request $request)
+// {
+//     // -------------------------
+//     // VALIDATION
+//     // -------------------------
+//     $validator = Validator::make($request->all(), [
+//         'employee_id' => 'required|integer|exists:employees,id',
+//         'date'        => 'required|date',
+//         'scan_status' => 'required|boolean',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation errors',
+//             'errors'  => $validator->errors(),
+//         ], 422);
+//     }
+
+//     // -------------------------
+//     // GET EMPLOYEE + SHIFT
+//     // -------------------------
+//     $employee = Employee::with('shift')->find($request->employee_id);
+
+//     if (!$employee->machine_id) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Machine not assigned to employee'
+//         ], 422);
+//     }
+
+//     if (!$employee->shift) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Shift not assigned to employee'
+//         ], 422);
+//     }
+
+//     $shift = $employee->shift;
+
+//     $shiftStart = $shift->clock_in_time;   // e.g. 19:00:00
+//     $shiftEnd   = $shift->clock_out_time;  // e.g. 07:00:00
+
+//     // -------------------------
+//     // TIME
+//     // -------------------------
+//     $scanTime   = \Carbon\Carbon::parse($request->date);
+//     $time       = $scanTime->format('H:i:s');
+//     $scanStatus = (bool) $request->scan_status;
+
+//     // -------------------------
+//     // SHIFT TYPE DETECTION
+//     // -------------------------
+//     $isNightShift = ($shiftStart > $shiftEnd); // crosses midnight
+
+//     // -------------------------
+//     // DATE FIX
+//     // -------------------------
+//     if ($isNightShift && $time <= $shiftEnd) {
+//         $attendanceDate = $scanTime->copy()->subDay()->toDateString();
+//     } else {
+//         $attendanceDate = $scanTime->toDateString();
+//     }
+
+//     // -------------------------
+//     // FIND / CREATE
+//     // -------------------------
+//     $attendance = Attendance::firstOrNew([
+//         'employee_id' => $employee->id,
+//         'date'        => $attendanceDate,
+//     ]);
+
+//     $attendance->machine_id = $employee->machine_id;
+//     $attendance->marked_by  = auth()->id();
+
+//     // ✅ FIX: SHIFT TYPE SAVE
+//     $attendance->shift_type = $isNightShift ? 'night' : 'morning';
+
+//     // -------------------------
+//     // MAIN LOGIC
+//     // -------------------------
+//     // -------------------------
+// // MAIN LOGIC (UPDATED)
+// // -------------------------
+// if ($scanStatus) {
+
+//     // ✅ CHECK: already status hai to overwrite mat karo (important)
+//     $alreadyMarked = $attendance->status !== null;
+
+//     if ($isNightShift) {
+
+//         // 🌙 NIGHT SHIFT
+
+//         if ($time >= $shiftStart && $time <= '23:59:59') {
+//             $attendance->status = 1; // Present
+//         } 
+//         elseif ($time >= '00:00:00' && $time < '05:00:00') {
+//             $attendance->status = 2; // Half Day
+//         } 
+//         elseif ($time >= '05:00:00' && $time <= $shiftEnd) {
+//             $attendance->status = 1; // Present
+//         } 
+//         else {
+//             // ✅ SHIFT END KE BAAD → Present hi rakho
+//             $attendance->status = $alreadyMarked ? $attendance->status : 1;
+//         }
+
+//     } else {
+
+//         // 🌞 DAY SHIFT
+
+//         if ($time >= $shiftStart && $time <= '12:00:00') {
+//             $attendance->status = 1;
+//         } 
+//         elseif ($time > '12:00:00' && $time < '17:00:00') {
+//             $attendance->status = 2;
+//         } 
+//         elseif ($time >= '17:00:00' && $time <= $shiftEnd) {
+//             $attendance->status = 1;
+//         } 
+//         else {
+            
+//             $attendance->status = $alreadyMarked ? $attendance->status : 1;
+//         }
+//     }
+
+//     // -------------------------
+//     // SAVE SCAN DATA
+//     // -------------------------
+//     $attendance->scan_time   = $scanTime;
+//     $attendance->scan_status = 1;
+
+//     // CLOCK IN / OUT
+//     if (!$attendance->clock_in) {
+//         $attendance->clock_in = $scanTime;
+//     } else {
+//         $attendance->clock_out = $scanTime;
+//     }
+// }
+
+//     $attendance->save();
+
+//     return response()->json([
+//         'status'            => true,
+//         'message'           => 'Attendance marked successfully',
+//         'shift_type'        => $attendance->shift_type, // correct value
+//         'attendance_status' => $attendance->status,
+//         'record'            => $attendance
+//     ]);
+// }
+// End
+
+
 public function markAttendance(Request $request)
 {
-    // -------------------------
-    // VALIDATION
-    // -------------------------
     $validator = Validator::make($request->all(), [
         'employee_id' => 'required|integer|exists:employees,id',
         'date'        => 'required|date',
         'scan_status' => 'required|boolean',
+        'machine_id'  => 'nullable|integer',
     ]);
 
     if ($validator->fails()) {
@@ -839,17 +992,7 @@ public function markAttendance(Request $request)
         ], 422);
     }
 
-    // -------------------------
-    // GET EMPLOYEE + SHIFT
-    // -------------------------
     $employee = Employee::with('shift')->find($request->employee_id);
-
-    if (!$employee->machine_id) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Machine not assigned to employee'
-        ], 422);
-    }
 
     if (!$employee->shift) {
         return response()->json([
@@ -858,118 +1001,99 @@ public function markAttendance(Request $request)
         ], 422);
     }
 
+    $machineId = $request->filled('machine_id')
+        ? $request->machine_id
+        : $employee->machine_id;
+
+    if (!$machineId) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Machine not assigned to employee'
+        ], 422);
+    }
+
     $shift = $employee->shift;
 
-    $shiftStart = $shift->clock_in_time;   // e.g. 19:00:00
-    $shiftEnd   = $shift->clock_out_time;  // e.g. 07:00:00
+    $shiftStart = $shift->clock_in_time;
+    $shiftEnd   = $shift->clock_out_time;
 
-    // -------------------------
-    // TIME
-    // -------------------------
     $scanTime   = \Carbon\Carbon::parse($request->date);
     $time       = $scanTime->format('H:i:s');
     $scanStatus = (bool) $request->scan_status;
 
-    // -------------------------
-    // SHIFT TYPE DETECTION
-    // -------------------------
-    $isNightShift = ($shiftStart > $shiftEnd); // crosses midnight
+    $isNightShift = ($shiftStart > $shiftEnd);
 
-    // -------------------------
-    // DATE FIX
-    // -------------------------
     if ($isNightShift && $time <= $shiftEnd) {
         $attendanceDate = $scanTime->copy()->subDay()->toDateString();
     } else {
         $attendanceDate = $scanTime->toDateString();
     }
 
-    // -------------------------
-    // FIND / CREATE
-    // -------------------------
     $attendance = Attendance::firstOrNew([
         'employee_id' => $employee->id,
         'date'        => $attendanceDate,
     ]);
 
-    $attendance->machine_id = $employee->machine_id;
+    $attendance->machine_id = $machineId;
     $attendance->marked_by  = auth()->id();
-
-    // ✅ FIX: SHIFT TYPE SAVE
     $attendance->shift_type = $isNightShift ? 'night' : 'morning';
 
-    // -------------------------
-    // MAIN LOGIC
-    // -------------------------
-    // -------------------------
-// MAIN LOGIC (UPDATED)
-// -------------------------
-if ($scanStatus) {
+    if ($scanStatus) {
 
-    // ✅ CHECK: already status hai to overwrite mat karo (important)
-    $alreadyMarked = $attendance->status !== null;
+        $alreadyMarked = $attendance->status !== null;
 
-    if ($isNightShift) {
+        if ($isNightShift) {
 
-        // 🌙 NIGHT SHIFT
+            if ($time >= $shiftStart && $time <= '23:59:59') {
+                $attendance->status = 1;
+            } 
+            elseif ($time >= '00:00:00' && $time < '05:00:00') {
+                $attendance->status = 2;
+            } 
+            elseif ($time >= '05:00:00' && $time <= $shiftEnd) {
+                $attendance->status = 1;
+            } 
+            else {
+                $attendance->status = $alreadyMarked ? $attendance->status : 1;
+            }
 
-        if ($time >= $shiftStart && $time <= '23:59:59') {
-            $attendance->status = 1; // Present
-        } 
-        elseif ($time >= '00:00:00' && $time < '05:00:00') {
-            $attendance->status = 2; // Half Day
-        } 
-        elseif ($time >= '05:00:00' && $time <= $shiftEnd) {
-            $attendance->status = 1; // Present
-        } 
-        else {
-            // ✅ SHIFT END KE BAAD → Present hi rakho
-            $attendance->status = $alreadyMarked ? $attendance->status : 1;
+        } else {
+
+            if ($time >= $shiftStart && $time <= '12:00:00') {
+                $attendance->status = 1;
+            } 
+            elseif ($time > '12:00:00' && $time < '17:00:00') {
+                $attendance->status = 2;
+            } 
+            elseif ($time >= '17:00:00' && $time <= $shiftEnd) {
+                $attendance->status = 1;
+            } 
+            else {
+                $attendance->status = $alreadyMarked ? $attendance->status : 1;
+            }
         }
 
-    } else {
+        $attendance->scan_time   = $scanTime;
+        $attendance->scan_status = 1;
 
-        // 🌞 DAY SHIFT
-
-        if ($time >= $shiftStart && $time <= '12:00:00') {
-            $attendance->status = 1;
-        } 
-        elseif ($time > '12:00:00' && $time < '17:00:00') {
-            $attendance->status = 2;
-        } 
-        elseif ($time >= '17:00:00' && $time <= $shiftEnd) {
-            $attendance->status = 1;
-        } 
-        else {
-            
-            $attendance->status = $alreadyMarked ? $attendance->status : 1;
+        if (!$attendance->clock_in) {
+            $attendance->clock_in = $scanTime;
+        } else {
+            $attendance->clock_out = $scanTime;
         }
     }
-
-    // -------------------------
-    // SAVE SCAN DATA
-    // -------------------------
-    $attendance->scan_time   = $scanTime;
-    $attendance->scan_status = 1;
-
-    // CLOCK IN / OUT
-    if (!$attendance->clock_in) {
-        $attendance->clock_in = $scanTime;
-    } else {
-        $attendance->clock_out = $scanTime;
-    }
-}
 
     $attendance->save();
 
     return response()->json([
         'status'            => true,
         'message'           => 'Attendance marked successfully',
-        'shift_type'        => $attendance->shift_type, // correct value
+        'shift_type'        => $attendance->shift_type,
         'attendance_status' => $attendance->status,
         'record'            => $attendance
     ]);
 }
+
 // public function markAttendance(Request $request)
 // {
 //     // -------------------------
